@@ -78,8 +78,17 @@ export async function sendMessageStreaming(
 
   try {
     const stream = query({ prompt, options: options as any });
+    // Use raw iterator protocol so we never call .return() on the generator.
+    // for-await-of calls .return() on early exit, which closes the stream
+    // and prevents the background IIFE from continuing iteration.
+    const iterator = stream[Symbol.asyncIterator]();
 
-    for await (const message of stream) {
+    let done = false;
+    while (!done) {
+      const next = await iterator.next();
+      if (next.done) { done = true; break; }
+      const message = next.value;
+
       // Capture session ID from init (hold in local var, don't persist yet)
       if (message.type === "system" && message.subtype === "init") {
         sessionId = message.session_id;
@@ -99,17 +108,29 @@ export async function sendMessageStreaming(
         const taskId = (message as any).task_id as string;
         onBackgroundStarted(taskId);
 
-        // Move remaining stream iteration to a background promise
+        // Hand the iterator to a background promise — it continues from here
         const bgSessionId = sessionId;
         const backgroundPromise = (async (): Promise<string> => {
           let followUpText = "";
           try {
-            for await (const bgMessage of stream) {
+            let bgDone = false;
+            while (!bgDone) {
+              const bgNext = await iterator.next();
+              if (bgNext.done) { bgDone = true; break; }
+              const bgMessage = bgNext.value;
+
               if (bgMessage.type === "assistant" && Array.isArray(bgMessage.message?.content)) {
                 for (const block of bgMessage.message.content) {
                   if (block.type === "text" && block.text) {
                     followUpText += block.text;
                   }
+                }
+              }
+              // Capture task_notification summary as follow-up text
+              if (bgMessage.type === "system" && bgMessage.subtype === "task_notification") {
+                const summary = (bgMessage as any).summary as string | undefined;
+                if (summary) {
+                  followUpText += summary;
                 }
               }
               if (bgMessage.type === "result") {

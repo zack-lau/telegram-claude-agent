@@ -283,8 +283,11 @@ async function processQuery(
         })
         .catch(async (err) => {
           log("error", `Background job ${taskId} failed for chat ${chatId}`, err);
+          const stale = !isJobRelevant(chatId, taskId);
           removeBackgroundJob(chatId, taskId);
-          await ctx.reply("background agent errored out").catch(() => {});
+          if (!stale) {
+            await ctx.reply("background agent errored out").catch(() => {});
+          }
         });
 
       return; // Release the queue
