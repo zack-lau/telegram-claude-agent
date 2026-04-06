@@ -188,6 +188,51 @@ describe("sendMessageStreaming", () => {
     expect(mockSetSessionId).not.toHaveBeenCalled();
   });
 
+  test("backgroundPromise includes task_notification summary", async () => {
+    mockMessages = [
+      { type: "system", subtype: "init", session_id: "sess-notify" },
+      {
+        type: "assistant",
+        message: { content: [{ type: "text", text: "launching agent" }] },
+      },
+      { type: "system", subtype: "task_started", task_id: "task-notify" },
+      { type: "system", subtype: "task_notification", task_id: "task-notify", status: "completed", summary: "agent found 3 files", output_file: "/tmp/out" },
+      { type: "result", session_id: "sess-notify-done" },
+    ];
+
+    const onText = mock(async () => {});
+    const onBg = mock(() => {});
+
+    const result = await sendMessageStreaming(42, "research", onText, onBg);
+    const followUp = await result.backgroundPromise!;
+
+    expect(followUp).toContain("agent found 3 files");
+  });
+
+  test("iterator is not closed on background handoff (can continue iteration)", async () => {
+    // This tests the core fix: raw iterator protocol allows continued iteration
+    // after the foreground function returns. If we used for-await-of, the
+    // generator would be closed via .return() and the background would get nothing.
+    mockMessages = [
+      { type: "system", subtype: "init", session_id: "sess-iter" },
+      { type: "system", subtype: "task_started", task_id: "task-iter" },
+      {
+        type: "assistant",
+        message: { content: [{ type: "text", text: "post-handoff text" }] },
+      },
+      { type: "result", session_id: "sess-iter" },
+    ];
+
+    const onText = mock(async () => {});
+    const onBg = mock(() => {});
+
+    const result = await sendMessageStreaming(42, "test", onText, onBg);
+    expect(result.backgroundPromise).not.toBeNull();
+
+    const followUp = await result.backgroundPromise!;
+    expect(followUp).toBe("post-handoff text");
+  });
+
   test("exports StreamingResult and ImageAttachment types", async () => {
     // Type-level verification — if this compiles, types are exported correctly
     const { sendMessageStreaming: fn } = await import("../src/agent/agent.js");
