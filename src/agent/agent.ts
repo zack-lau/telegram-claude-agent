@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { type Bot } from "grammy";
 import { createProjectMcpServer } from "../memory/project-tools.js";
-import { getSessionId, setSessionId, hasBackgroundJobs } from "./sessions.js";
+import { getSessionId, setSessionId } from "./sessions.js";
 import { buildHooksForChat } from "./hooks.js";
 import { getConfig, log } from "../config.js";
 
