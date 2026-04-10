@@ -165,7 +165,7 @@ export async function handleMemory(ctx: Context): Promise<void> {
   } catch {}
 
   await ctx.reply(
-    `memory\n\nstored facts: ${factCount}\nactive goals: ${goalCount}\n\nask me to search my memory for specific topics.`,
+    `memory\n\nstored facts: ${factCount}\ngoals/decisions: ${goalCount}\n\nask me to search my memory for specific topics.`,
   );
 }
 

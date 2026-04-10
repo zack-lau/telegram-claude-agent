@@ -59,12 +59,16 @@ export function isGatedTool(toolName: string, input: Record<string, unknown>): b
 /**
  * Format tool info for the Telegram approval message.
  */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function formatToolDescription(toolName: string, input: Record<string, unknown>): string {
   if (toolName === "Bash" && typeof input.command === "string") {
     const cmd = input.command.length > 200
       ? input.command.slice(0, 200) + "..."
       : input.command;
-    return `\`${cmd}\``;
+    return `<code>${escapeHtml(cmd)}</code>`;
   }
 
   // MCP tools — show tool name + relevant input keys
@@ -72,11 +76,11 @@ function formatToolDescription(toolName: string, input: Record<string, unknown>)
     .filter(([, v]) => typeof v === "string" || typeof v === "number")
     .map(([k, v]) => {
       const val = String(v);
-      return `${k}: ${val.length > 80 ? val.slice(0, 80) + "..." : val}`;
+      return `${escapeHtml(k)}: ${escapeHtml(val.length > 80 ? val.slice(0, 80) + "..." : val)}`;
     })
     .join("\n");
 
-  return `**${toolName}**\n${summary || "(no input)"}`;
+  return `<b>${escapeHtml(toolName)}</b>\n${summary || "(no input)"}`;
 }
 
 /**

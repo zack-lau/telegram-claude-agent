@@ -1,9 +1,10 @@
 import { type Context } from "grammy";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
-import { join, basename, extname } from "path";
+import { join, basename, extname, resolve } from "path";
 import { getConfig, log } from "../config.js";
 
-const FILES_DIR = "./data/files";
+// Use absolute path so the agent (running in AGENT_CWD) can access these files
+const FILES_DIR = resolve("./data/files");
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // Telegram Bot API limit
 
 export interface FileAttachment {
@@ -23,7 +24,6 @@ export async function downloadDocument(ctx: Context): Promise<FileAttachment | n
   if (!doc) return null;
 
   if (doc.file_size && doc.file_size > MAX_FILE_SIZE) {
-    await ctx.reply("file too large — telegram bots can only download files up to 20MB");
     return null;
   }
 
