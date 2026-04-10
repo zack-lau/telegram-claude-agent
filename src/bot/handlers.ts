@@ -161,7 +161,7 @@ export async function handleMemory(ctx: Context): Promise<void> {
   let goalCount = 0;
   try {
     factCount = await countRows("facts");
-    goalCount = await countRows("goals", 'status = "active"');
+    goalCount = await countRows("goals");
   } catch {}
 
   await ctx.reply(

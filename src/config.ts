@@ -6,8 +6,9 @@ const envSchema = z.object({
 
   // ── DGX Spark services (your-server) ──
 
-  // Existing MCP Memory LanceDB (SSE transport, port 8282)
-  SPARK_MEMORY_MCP_URL: z.string().url(),
+  // Memory MCP LanceDB (stdio subprocess)
+  MEMORY_MCP_COMMAND: z.string().default("./workspace/mcp-memory-lancedb/.venv/bin/python"),
+  MEMORY_MCP_SCRIPT: z.string().default("./workspace/mcp-memory-lancedb/server.py"),
 
   // Existing QMD Doc Search MCP (port 8181)
   SPARK_QMD_MCP_URL: z.string().url(),

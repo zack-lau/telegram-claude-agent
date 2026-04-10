@@ -38,7 +38,10 @@ export async function sendMessageStreaming(
     settingSources: ["project", "user"],
     ...(bot ? { hooks: buildHooksForChat(bot, chatId) } : {}),
     mcpServers: {
-      memory: { type: "sse", url: cfg.SPARK_MEMORY_MCP_URL },
+      memory: {
+        command: cfg.MEMORY_MCP_COMMAND,
+        args: [cfg.MEMORY_MCP_SCRIPT],
+      },
       qmd: { type: "sse", url: cfg.SPARK_QMD_MCP_URL },
       projects: projectServer,
     },

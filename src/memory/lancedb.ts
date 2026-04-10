@@ -1,148 +1,105 @@
+import { spawn } from "child_process";
 import { getConfig, log } from "../config.js";
 
 /**
  * Lightweight helper to call the MCP Memory LanceDB `memory_stats` tool
- * via SSE transport and return row counts by category.
- *
- * The memory server uses a single "memories" table with a `category` field.
- * The handlers call countRows("facts"), countRows("goals"), etc. — these
- * map to category counts from memory_stats.
+ * via stdio transport (spawns the server process, sends JSON-RPC, reads result).
  */
 
 let _statsCache: { data: Record<string, number>; ts: number } | null = null;
-const CACHE_TTL_MS = 30_000; // Cache stats for 30 seconds
+const CACHE_TTL_MS = 30_000;
 
 /**
- * Fetch memory stats from the MCP server via SSE transport.
- * Returns category counts like { fact: 12, decision: 3, ... }
+ * Spawn the memory MCP server as a one-shot stdio subprocess,
+ * send a JSON-RPC initialize + tools/call request, and parse the result.
  */
 async function fetchStats(): Promise<Record<string, number>> {
-  // Return cached if fresh
   if (_statsCache && Date.now() - _statsCache.ts < CACHE_TTL_MS) {
     return _statsCache.data;
   }
 
   const cfg = getConfig();
-  const sseUrl = cfg.SPARK_MEMORY_MCP_URL; // e.g. http://your-server:8282/sse
 
   try {
-    // Step 1: Connect to SSE endpoint to get the messages URL
-    const sseRes = await fetch(sseUrl, {
-      signal: AbortSignal.timeout(5000),
-      headers: { Accept: "text/event-stream" },
-    });
+    const result = await new Promise<string>((resolve, reject) => {
+      const proc = spawn(cfg.MEMORY_MCP_COMMAND, [cfg.MEMORY_MCP_SCRIPT], {
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 15000,
+      });
 
-    if (!sseRes.ok || !sseRes.body) {
-      throw new Error(`SSE connect failed: ${sseRes.status}`);
-    }
+      let stdout = "";
+      let stderr = "";
+      proc.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
+      proc.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
 
-    // Read the first SSE event to get the endpoint URL
-    const reader = sseRes.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let messagesUrl = "";
-
-    while (!messagesUrl) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      // Parse SSE events — look for "endpoint" event
-      const lines = buffer.split("\n");
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const data = line.slice(6).trim();
-          // The endpoint event contains the messages URL path
-          if (data.startsWith("/") || data.startsWith("http")) {
-            messagesUrl = data;
-          }
+      proc.on("error", (err) => reject(err));
+      proc.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`memory MCP exited ${code}: ${stderr}`));
+        } else {
+          resolve(stdout);
         }
-      }
-    }
+      });
 
-    // Clean up the SSE connection
-    reader.cancel().catch(() => {});
-
-    if (!messagesUrl) {
-      throw new Error("Could not get messages endpoint from SSE");
-    }
-
-    // Make absolute URL if relative
-    if (messagesUrl.startsWith("/")) {
-      const base = new URL(sseUrl);
-      messagesUrl = `${base.origin}${messagesUrl}`;
-    }
-
-    // Step 2: Initialize MCP session
-    await fetch(messagesUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      // Send JSON-RPC messages over stdin
+      const init = JSON.stringify({
         jsonrpc: "2.0",
         id: 1,
         method: "initialize",
         params: {
           protocolVersion: "2024-11-05",
           capabilities: {},
-          clientInfo: { name: "telegram-bot", version: "0.1.0" },
+          clientInfo: { name: "telegram-bot-stats", version: "0.1.0" },
         },
-      }),
-      signal: AbortSignal.timeout(5000),
-    });
+      });
 
-    // Step 3: Call memory_stats tool
-    const toolRes = await fetch(messagesUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      const call = JSON.stringify({
         jsonrpc: "2.0",
         id: 2,
         method: "tools/call",
-        params: {
-          name: "memory_stats",
-          arguments: {},
-        },
-      }),
-      signal: AbortSignal.timeout(10000),
+        params: { name: "memory_stats", arguments: {} },
+      });
+
+      proc.stdin.write(init + "\n");
+      proc.stdin.write(call + "\n");
+      proc.stdin.end();
     });
 
-    if (!toolRes.ok) {
-      throw new Error(`tools/call failed: ${toolRes.status}`);
+    // Parse JSON-RPC responses (one per line)
+    const lines = result.trim().split("\n").filter(Boolean);
+    for (const line of lines) {
+      try {
+        const msg = JSON.parse(line);
+        if (msg.id === 2) {
+          if (msg.error) {
+            log("warn", "memory_stats RPC error", msg.error);
+            return {};
+          }
+          if (msg.result?.content?.[0]?.text) {
+            const stats = JSON.parse(msg.result.content[0].text);
+            const byCategory: Record<string, number> = stats.by_category ?? {};
+            _statsCache = { data: byCategory, ts: Date.now() };
+            return byCategory;
+          }
+        }
+      } catch {
+        continue;
+      }
     }
 
-    const result = await toolRes.json();
-    const content = result?.result?.content?.[0]?.text;
-
-    if (!content) {
-      throw new Error("No content in memory_stats response");
-    }
-
-    const stats = JSON.parse(content);
-    const byCategory: Record<string, number> = stats.by_category ?? {};
-
-    // Cache it
-    _statsCache = { data: byCategory, ts: Date.now() };
-    return byCategory;
+    return {};
   } catch (err) {
-    log("debug", "Failed to fetch memory stats", err);
+    log("warn", "Failed to fetch memory stats", err);
     return {};
   }
 }
 
 /**
  * Get approximate row count for a memory category.
- *
- * @param table - Category name: "episodes", "facts", "goals", "reflections"
- *                Maps to MCP memory categories: fact, decision, preference, entity, other
- * @param _filter - Unused, kept for API compatibility with handlers.ts
  */
-export async function countRows(
-  table: string,
-  _filter?: string,
-): Promise<number> {
+export async function countRows(table: string): Promise<number> {
   const stats = await fetchStats();
 
-  // Map handler table names to memory categories
   const tableToCategory: Record<string, string[]> = {
     episodes: ["other"],
     facts: ["fact"],
@@ -152,7 +109,6 @@ export async function countRows(
 
   const categories = tableToCategory[table];
   if (!categories) {
-    // Direct category lookup
     return stats[table] ?? 0;
   }
 
