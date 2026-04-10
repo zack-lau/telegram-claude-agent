@@ -15,6 +15,7 @@ import { countRows } from "../memory/lancedb.js";
 import { markdownToTelegramHtml } from "./format.js";
 import { transcribeVoice } from "./voice.js";
 import { downloadPhoto } from "./photo.js";
+import { downloadDocument } from "./document.js";
 import { log } from "../config.js";
 import type { ImageAttachment } from "../agent/agent.js";
 
@@ -231,6 +232,31 @@ export async function handlePhoto(ctx: Context): Promise<void> {
   }
 }
 
+export async function handleDocument(ctx: Context): Promise<void> {
+  const chatId = ctx.chat?.id;
+  if (!chatId) return;
+
+  const queued = enqueue(chatId, async () => {
+    await ctx.replyWithChatAction("typing").catch(() => {});
+    try {
+      const doc = await downloadDocument(ctx);
+      if (!doc) {
+        await ctx.reply("couldn't download that file");
+        return;
+      }
+      const caption = ctx.message?.caption || "";
+      const prompt = `[File received: ${doc.fileName} (${doc.mimeType}, ${doc.sizeBytes} bytes), saved to ${doc.filePath}]\n\n${caption}`.trim();
+      await processQuery(ctx, chatId, prompt);
+    } catch (err) {
+      log("error", `Document handling failed for chat ${chatId}`, err);
+      await ctx.reply("something went wrong with the file.");
+    }
+  });
+  if (!queued) {
+    await ctx.reply("too many messages queued — hold on a sec.");
+  }
+}
+
 // ── Core query processor ──
 
 async function processQuery(
@@ -246,7 +272,6 @@ async function processQuery(
   }, 4000);
 
   try {
-    const skipResume = hasBackgroundJobs(chatId);
     let backgroundTaskId: string | null = null;
 
     const { backgroundPromise, sessionId } = await sendMessageStreaming(
@@ -261,7 +286,6 @@ async function processQuery(
       },
       _bot ?? undefined,
       images,
-      skipResume,
     );
 
     if (backgroundPromise && backgroundTaskId && sessionId) {

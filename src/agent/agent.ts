@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { type Bot } from "grammy";
 import { createProjectMcpServer } from "../memory/project-tools.js";
-import { getSessionId, setSessionId } from "./sessions.js";
+import { getSessionId, setSessionId, getMessageCount, getGeneration } from "./sessions.js";
 import { buildHooksForChat } from "./hooks.js";
 import { getConfig, log } from "../config.js";
 
@@ -24,18 +24,18 @@ export async function sendMessageStreaming(
   onBackgroundStarted: (taskId: string) => void,
   bot?: Bot,
   images?: ImageAttachment[],
-  skipResume?: boolean,
 ): Promise<StreamingResult> {
   const cfg = getConfig();
   const start = performance.now();
 
   const existingSessionId = getSessionId(chatId);
+  const startGeneration = getGeneration(chatId);
 
   const options: Record<string, unknown> = {
     maxTurns: cfg.AGENT_MAX_TURNS,
     permissionMode: cfg.AGENT_PERMISSION_MODE,
     cwd: cfg.AGENT_CWD,
-    settingSources: ["project"],
+    settingSources: ["project", "user"],
     ...(bot ? { hooks: buildHooksForChat(bot, chatId) } : {}),
     mcpServers: {
       memory: { type: "sse", url: cfg.SPARK_MEMORY_MCP_URL },
@@ -53,7 +53,7 @@ export async function sendMessageStreaming(
     ],
   };
 
-  if (!skipResume && existingSessionId) {
+  if (existingSessionId) {
     options.resume = existingSessionId;
     log("debug", `Resuming session ${existingSessionId} for chat ${chatId}`);
   }
@@ -110,6 +110,16 @@ export async function sendMessageStreaming(
 
         // Hand the iterator to a background promise — it continues from here
         const bgSessionId = sessionId;
+
+        // Persist the foreground session so the next message can resume continuity
+        // even while the background job is still running.
+        if (bgSessionId) {
+          setSessionId(chatId, bgSessionId);
+        }
+        // Snapshot message count after early persist — the background closure
+        // uses this to avoid clobbering a session advanced by foreground messages.
+        const bgMessageCount = getMessageCount(chatId);
+
         const backgroundPromise = (async (): Promise<string> => {
           let followUpText = "";
           try {
@@ -145,7 +155,12 @@ export async function sendMessageStreaming(
           }
           const elapsed = (performance.now() - start).toFixed(0);
           log("info", `Chat ${chatId}: background completed in ${elapsed}ms (${followUpText.length} chars)`);
-          // Do NOT persist session — background sessions are tracked separately
+          // Only persist the background session if no foreground message has
+          // advanced the session since we started. This prevents a stale
+          // background job from clobbering a newer session set by foreground messages.
+          if (sessionId && getMessageCount(chatId) === bgMessageCount) {
+            setSessionId(chatId, sessionId);
+          }
           return followUpText;
         })();
 
@@ -170,8 +185,8 @@ export async function sendMessageStreaming(
     throw err;
   }
 
-  // Foreground path — persist session
-  if (sessionId) {
+  // Foreground path — persist session unless /new was called while we were running
+  if (sessionId && getGeneration(chatId) === startGeneration) {
     setSessionId(chatId, sessionId);
   }
 

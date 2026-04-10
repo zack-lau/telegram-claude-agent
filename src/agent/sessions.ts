@@ -117,6 +117,10 @@ export function getGeneration(chatId: number): number {
   return chatGenerations.get(chatId) ?? 0;
 }
 
+export function getMessageCount(chatId: number): number {
+  return sessions.get(chatId)?.message_count ?? 0;
+}
+
 export function clearAllBackgroundJobs(chatId: number): void {
   backgroundJobs.delete(chatId);
 }
