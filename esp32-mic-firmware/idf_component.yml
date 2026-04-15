@@ -1,0 +1,4 @@
+dependencies:
+  idf: ">=5.3.0"
+  espressif__opus: ">=0.5.0"
+  espressif__esp-sr: ">=2.0.0"
