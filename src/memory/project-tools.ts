@@ -6,7 +6,7 @@ import { getConfig, log } from "../config.js";
 
 /**
  * Get the projects root directory.
- * Convention: ~/claude-workspaces/projects/ on this-machine
+ * Convention: ~/claude-workspaces/projects/
  */
 function getProjectsRoot(): string {
   const cfg = getConfig();
