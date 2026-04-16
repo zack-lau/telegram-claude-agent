@@ -2,8 +2,6 @@ import { type Bot } from "grammy";
 import { isGatedTool, requestApproval } from "../bot/approvals.js";
 import { log } from "../config.js";
 
-let _counter = 0;
-
 /**
  * Build SDK-compatible hooks config with PreToolUse gating.
  * Each call captures bot and chatId in a closure — no global mutable state.
@@ -31,7 +29,7 @@ export function buildHooksForChat(bot: Bot, chatId: number) {
               };
             }
 
-            const requestId = `${Date.now()}-${++_counter}`;
+            const requestId = crypto.randomUUID();
             log("info", `Requesting Telegram approval for ${toolName} (${requestId})`);
 
             const approved = await requestApproval(

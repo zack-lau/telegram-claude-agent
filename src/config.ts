@@ -2,7 +2,12 @@ import { z } from "zod";
 
 const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1),
-  ALLOWED_USERS: z.string().transform((s) => s.split(",").map(Number)),
+  ALLOWED_USERS: z
+    .string()
+    .transform((s) => s.split(",").map(Number))
+    .refine((arr) => arr.length > 0 && arr.every((n) => Number.isInteger(n) && n > 0), {
+      message: "ALLOWED_USERS must be a comma-separated list of positive Telegram user IDs",
+    }),
 
   // ── DGX Spark services (your-server) ──
 

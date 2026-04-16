@@ -61,6 +61,7 @@ async function drainQueue(chatId: number, generation: number): Promise<void> {
     queue.shift();
   }
   chatQueues.delete(chatId);
+  queueGenerations.delete(chatId);
 }
 
 // ── Per-chat outbound send lock ──
@@ -74,14 +75,18 @@ async function sendFormattedResponse(ctx: Context, raw: string): Promise<void> {
     const html = markdownToTelegramHtml(raw);
     if (html.length <= 4096) {
       await ctx.reply(html, { parse_mode: "HTML" }).catch(async () => {
-        await ctx.reply(raw);
+        await ctx.reply(raw).catch((e) => {
+          log("error", `Failed to send message to chat ${chatId}`, e);
+        });
       });
     } else {
       const chunks = splitMessage(raw, 3500);
       for (const chunk of chunks) {
         const chunkHtml = markdownToTelegramHtml(chunk);
         await ctx.reply(chunkHtml, { parse_mode: "HTML" }).catch(async () => {
-          await ctx.reply(chunk);
+          await ctx.reply(chunk).catch((e) => {
+            log("error", `Failed to send chunk to chat ${chatId}`, e);
+          });
         });
       }
     }
@@ -295,14 +300,18 @@ async function processQuery(
       const taskId = backgroundTaskId;
       backgroundPromise
         .then(async (followUpText) => {
-          if (!isJobRelevant(chatId, taskId)) {
-            log("info", `Background job ${taskId} stale for chat ${chatId}, discarding`);
+          try {
+            if (!isJobRelevant(chatId, taskId)) {
+              log("info", `Background job ${taskId} stale for chat ${chatId}, discarding`);
+              removeBackgroundJob(chatId, taskId);
+              return;
+            }
             removeBackgroundJob(chatId, taskId);
-            return;
-          }
-          removeBackgroundJob(chatId, taskId);
-          if (followUpText.trim()) {
-            await sendFormattedResponse(ctx, followUpText);
+            if (followUpText.trim()) {
+              await sendFormattedResponse(ctx, followUpText);
+            }
+          } catch (err) {
+            log("error", `Background job result delivery failed for chat ${chatId}`, err);
           }
         })
         .catch(async (err) => {

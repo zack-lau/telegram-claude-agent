@@ -116,14 +116,14 @@ export async function requestApproval(
 
   return new Promise<boolean>((resolve) => {
     const timeout = setTimeout(() => {
-      if (pending.has(requestId)) {
-        pending.delete(requestId);
-        log("info", `Approval timed out for ${toolName} (${requestId})`);
-        bot.api
-          .sendMessage(chatId, `⏰ Approval timed out — auto-denied.`)
-          .catch(() => {});
-        resolve(false);
-      }
+      const entry = pending.get(requestId);
+      if (!entry) return; // already resolved by callback handler
+      pending.delete(requestId);
+      log("info", `Approval timed out for ${toolName} (${requestId})`);
+      bot.api
+        .sendMessage(chatId, `⏰ Approval timed out — auto-denied.`)
+        .catch(() => {});
+      resolve(false);
     }, APPROVAL_TIMEOUT_MS);
 
     pending.set(requestId, {

@@ -1,8 +1,11 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
 import { log } from "../config.js";
 import type { SessionEntry } from "../types.js";
 
-const SESSION_FILE = "./data/sessions.json";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SESSION_FILE = resolve(__dirname, "../../data/sessions.json");
 
 let sessions: Map<number, SessionEntry> = new Map();
 
@@ -57,6 +60,8 @@ export function setSessionId(chatId: number, sessionId: string): void {
  */
 export function clearSession(chatId: number): void {
   sessions.delete(chatId);
+  chatGenerations.delete(chatId);
+  backgroundJobs.delete(chatId);
   saveSessions();
   log("info", `Cleared session for chat ${chatId}`);
 }

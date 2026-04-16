@@ -108,7 +108,7 @@ export async function sendMessageStreaming(
 
       // Detect background agent — task_started is our early signal
       if (message.type === "system" && message.subtype === "task_started") {
-        const taskId = (message as any).task_id as string;
+        const taskId = String((message as Record<string, unknown>).task_id ?? "");
         onBackgroundStarted(taskId);
 
         // Hand the iterator to a background promise — it continues from here
@@ -122,6 +122,7 @@ export async function sendMessageStreaming(
         // Snapshot message count after early persist — the background closure
         // uses this to avoid clobbering a session advanced by foreground messages.
         const bgMessageCount = getMessageCount(chatId);
+        const bgGeneration = getGeneration(chatId);
 
         const backgroundPromise = (async (): Promise<string> => {
           let followUpText = "";
@@ -132,18 +133,21 @@ export async function sendMessageStreaming(
               if (bgNext.done) { bgDone = true; break; }
               const bgMessage = bgNext.value;
 
+              // Accumulate assistant text — deliver as one consolidated message
+              // via the backgroundPromise .then() handler, not per-chunk, to
+              // avoid flooding the chat with fragmented messages.
               if (bgMessage.type === "assistant" && Array.isArray(bgMessage.message?.content)) {
                 for (const block of bgMessage.message.content) {
                   if (block.type === "text" && block.text) {
-                    followUpText += block.text;
+                    followUpText += (followUpText ? "\n\n" : "") + block.text;
                   }
                 }
               }
-              // Capture task_notification summary as follow-up text
+              // Capture task_notification summary
               if (bgMessage.type === "system" && bgMessage.subtype === "task_notification") {
-                const summary = (bgMessage as any).summary as string | undefined;
+                const summary = (bgMessage as Record<string, unknown>).summary as string | undefined;
                 if (summary) {
-                  followUpText += summary;
+                  followUpText += (followUpText ? "\n\n" : "") + summary;
                 }
               }
               if (bgMessage.type === "result") {
@@ -159,9 +163,8 @@ export async function sendMessageStreaming(
           const elapsed = (performance.now() - start).toFixed(0);
           log("info", `Chat ${chatId}: background completed in ${elapsed}ms (${followUpText.length} chars)`);
           // Only persist the background session if no foreground message has
-          // advanced the session since we started. This prevents a stale
-          // background job from clobbering a newer session set by foreground messages.
-          if (sessionId && getMessageCount(chatId) === bgMessageCount) {
+          // advanced the session since we started.
+          if (sessionId && getMessageCount(chatId) === bgMessageCount && getGeneration(chatId) === bgGeneration) {
             setSessionId(chatId, sessionId);
           }
           return followUpText;

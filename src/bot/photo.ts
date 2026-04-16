@@ -31,8 +31,15 @@ export async function downloadPhoto(ctx: Context): Promise<ImageAttachment | nul
     const buffer = await resp.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
 
-    // Telegram photos are always JPEG
-    return { base64, mediaType: "image/jpeg" };
+    // Infer media type from file extension; default to JPEG (Telegram's most common)
+    const ext = file.file_path?.split(".").pop()?.toLowerCase();
+    const mediaType: ImageAttachment["mediaType"] =
+      ext === "png" ? "image/png" :
+      ext === "gif" ? "image/gif" :
+      ext === "webp" ? "image/webp" :
+      "image/jpeg";
+
+    return { base64, mediaType };
   } catch (err) {
     log("error", "Photo download error", err);
     return null;

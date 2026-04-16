@@ -39,7 +39,7 @@ export async function rateLimitMiddleware(
   const now = Date.now();
   const timestamps = rateLimitMap.get(userId) ?? [];
 
-  // Remove old timestamps outside the window
+  // Remove old timestamps outside the window; evict entry if it goes empty
   const recent = timestamps.filter((t) => now - t < RATE_WINDOW_MS);
 
   if (recent.length >= RATE_MAX) {
@@ -49,7 +49,11 @@ export async function rateLimitMiddleware(
   }
 
   recent.push(now);
-  rateLimitMap.set(userId, recent);
+  if (recent.length > 0) {
+    rateLimitMap.set(userId, recent);
+  } else {
+    rateLimitMap.delete(userId);
+  }
 
   await next();
 }
