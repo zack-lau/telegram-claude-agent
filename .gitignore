@@ -24,6 +24,10 @@ workspace/mcp-memory-lancedb/
 workspace/mcp-perplexity/
 workspace/mcp-searxng/
 
+# Internal planning docs and personal scripts
+docs/
+scripts/sgmm01-backup.sh
+
 # Experiments / hardware prototypes (not part of the core bot)
 esp32-mic-firmware/
 

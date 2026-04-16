@@ -6,8 +6,6 @@ import { loadSessions } from "./agent/sessions.js";
 async function main() {
   const cfg = getConfig();
   log("info", "Starting Telegram Claude Agent");
-  log("info", `Mac Mini: this-machine (this machine)`);
-  log("info", `DGX Spark: your-server (your-server)`);
 
   // Ensure directories exist
   for (const dir of ["./data", cfg.AGENT_CWD, cfg.PROJECTS_ROOT]) {
