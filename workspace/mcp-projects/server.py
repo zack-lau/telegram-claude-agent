@@ -7,7 +7,11 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-PROJECTS_ROOT = Path(os.environ.get("PROJECTS_ROOT", "./projects"))
+# Default: sibling `projects/` directory next to wherever this server lives
+# (i.e. the repo root when installed at workspace/mcp-projects/server.py).
+# Override with PROJECTS_ROOT env var for other layouts.
+_HERE = Path(__file__).resolve().parent
+PROJECTS_ROOT = Path(os.environ.get("PROJECTS_ROOT", str(_HERE.parent.parent / "projects")))
 _VALID_NAME = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 mcp = FastMCP("projects")
