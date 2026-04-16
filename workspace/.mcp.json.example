@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "memory": {
+      "command": "/path/to/mcp-memory-lancedb/.venv/bin/python",
+      "args": [
+        "/path/to/mcp-memory-lancedb/server.py"
+      ]
+    },
+    "perplexity": {
+      "command": "/path/to/mcp-perplexity/.venv/bin/python",
+      "args": [
+        "/path/to/mcp-perplexity/server.py"
+      ]
+    },
+    "searxng": {
+      "command": "/path/to/mcp-searxng/.venv/bin/python",
+      "args": [
+        "/path/to/mcp-searxng/server.py"
+      ]
+    },
+    "projects": {
+      "command": "/path/to/mcp-projects/.venv/bin/python",
+      "args": [
+        "/path/to/mcp-projects/server.py"
+      ],
+      "env": {
+        "PROJECTS_ROOT": "/path/to/your/projects"
+      }
+    },
+    "qmd": {
+      "type": "http",
+      "url": "http://your-qmd-server:8181/mcp"
+    },
+    "markitdown": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["markitdown-mcp"]
+    }
+  }
+}

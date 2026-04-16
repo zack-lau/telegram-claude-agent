@@ -1,2 +1,31 @@
-.worktrees/
-data/openclaw-archive/
+# Dependencies
+node_modules/
+
+# Environment — copy .env.example and fill in your values
+.env
+
+# Personal data
+data/
+
+# Personal projects
+projects/
+
+# Workspace — personal config (see workspace/.mcp.json.example and workspace/CLAUDE.md.example)
+workspace/.mcp.json
+workspace/CLAUDE.md
+workspace/docs/
+workspace/personas/
+workspace/*.sh
+workspace/*.py
+workspace/*.json
+
+# Workspace — MCP servers (environment-specific; contain credentials/config)
+workspace/mcp-memory-lancedb/
+workspace/mcp-perplexity/
+workspace/mcp-searxng/
+
+# Experiments / hardware prototypes (not part of the core bot)
+esp32-mic-firmware/
+
+# macOS
+.DS_Store

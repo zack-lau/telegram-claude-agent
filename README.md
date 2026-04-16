@@ -84,21 +84,15 @@ The agent can store and recall facts, goals, and preferences across conversation
 **What it enables:** `memory_store`, `memory_recall`, `memory_forget`, `memory_list`, `memory_stats` tools in the agent. The `/memory` command shows current memory stats.
 
 **Requires:**
-- A running LanceDB MCP server (see `workspace/mcp-memory-lancedb/`)
+- A LanceDB MCP server that exposes `memory_store`, `memory_recall`, `memory_forget`, `memory_update`, `memory_list`, `memory_stats` tools over stdio
 - BGE-M3 embeddings server (`SPARK_EMBED_URL`) for semantic search
 - BGE Reranker server (`SPARK_RERANK_URL`) for result reranking
 
-**Setup:**
-```bash
-cd workspace/mcp-memory-lancedb
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-```
+**Setup:** Point `MEMORY_MCP_COMMAND` and `MEMORY_MCP_SCRIPT` at your MCP server:
 
-Then set in `.env`:
 ```
-MEMORY_MCP_COMMAND=./workspace/mcp-memory-lancedb/.venv/bin/python
-MEMORY_MCP_SCRIPT=./workspace/mcp-memory-lancedb/server.py
+MEMORY_MCP_COMMAND=/path/to/mcp-memory-lancedb/.venv/bin/python
+MEMORY_MCP_SCRIPT=/path/to/mcp-memory-lancedb/server.py
 SPARK_EMBED_URL=http://your-embed-server:8001
 SPARK_RERANK_URL=http://your-rerank-server:8002
 ```

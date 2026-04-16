@@ -1,7 +1,0 @@
-# Name,   Type, SubType, Offset,   Size,  Flags
-nvs,      data, nvs,     0x9000,   24K,
-otadata,  data, ota,     0xf000,   8K,
-app0,     app,  ota_0,   0x10000,  3500K,
-app1,     app,  ota_1,   ,         3500K,
-wake_model, data, spiffs, ,        512K,
-spiffs,   data, spiffs,  ,         512K,
