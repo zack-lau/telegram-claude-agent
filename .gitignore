@@ -4,7 +4,7 @@ node_modules/
 # Environment — copy .env.example and fill in your values
 .env
 
-# Personal data
+# Runtime data
 data/
 
 # Personal projects
@@ -20,16 +20,11 @@ workspace/*.py
 workspace/*.json
 
 # Workspace — MCP servers (environment-specific; contain credentials/config)
-workspace/mcp-memory-lancedb/
-workspace/mcp-perplexity/
-workspace/mcp-searxng/
+workspace/mcp-*/
 
 # Internal planning docs and personal scripts
 docs/
-scripts/sgmm01-backup.sh
-
-# Experiments / hardware prototypes (not part of the core bot)
-esp32-mic-firmware/
+scripts/*.sh
 
 # macOS
 .DS_Store
