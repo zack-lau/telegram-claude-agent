@@ -447,13 +447,14 @@ export async function resolveMedia(
   const placeholder = resolveTelegramMediaPlaceholder(msg) ?? "<media:document>";
   let magikaResult: MagikaResult | undefined;
   try {
-    const bytes = await fs.readFile(saved.path);
-    magikaResult = await runMagika(bytes);
-    if (magikaResult.mimeType !== saved.contentType) {
-      logVerbose(
-        `telegram: Magika detected different MIME type: magika=${magikaResult.mimeType} telegram=${saved.contentType ?? "unknown"}`,
-      );
-    }
+    const fd = await fs.open(saved.path, "r");
+    const buf = Buffer.alloc(65536);
+    const { bytesRead } = await fd.read(buf, 0, buf.length, 0);
+    await fd.close();
+    magikaResult = await runMagika(buf.subarray(0, bytesRead));
+    logVerbose(
+      `telegram: Magika detected label=${magikaResult.label} mime=${magikaResult.mimeType} score=${magikaResult.score.toFixed(2)} telegram_mime=${saved.contentType ?? "unknown"}`,
+    );
   } catch (err) {
     logVerbose(`telegram: Magika detection failed: ${String(err)}`);
   }

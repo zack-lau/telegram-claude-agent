@@ -1,27 +1,26 @@
 import path from "node:path";
 import { fileTypeFromBuffer } from "file-type";
 import { type MediaKind, mediaKindFromMime } from "./constants.js";
-import { Magika } from "@google/magika";
+import { Magika } from "magika";
 
 export type MagikaResult = { mimeType: string; label: string; score: number };
 
-let s_magika: Magika | null = null;
+let s_magikaPromise: Promise<Magika> | null = null;
 
-export async function getMagika(): Promise<Magika> {
-  if (!s_magika) {
-    s_magika = new Magika();
-    await s_magika.load();
+function getMagika(): Promise<Magika> {
+  if (!s_magikaPromise) {
+    s_magikaPromise = Magika.create();
   }
-  return s_magika;
+  return s_magikaPromise;
 }
 
 export async function runMagika(buffer: Buffer): Promise<MagikaResult> {
   const magika = await getMagika();
   const result = await magika.identifyBytes(new Uint8Array(buffer));
   return {
-    mimeType: result.output.mime_type,
-    label: result.output.label,
-    score: result.output.score,
+    mimeType: result.prediction.output.mime_type,
+    label: result.prediction.output.label,
+    score: result.prediction.score,
   };
 }
 
