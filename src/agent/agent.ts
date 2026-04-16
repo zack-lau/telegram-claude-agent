@@ -38,16 +38,17 @@ export async function sendMessageStreaming(
     settingSources: ["project", "user"],
     ...(bot ? { hooks: buildHooksForChat(bot, chatId) } : {}),
     mcpServers: {
-      memory: {
-        command: cfg.MEMORY_MCP_COMMAND,
-        args: [cfg.MEMORY_MCP_SCRIPT],
-      },
-      qmd: { type: "sse", url: cfg.SPARK_QMD_MCP_URL },
+      ...(cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT ? {
+        memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] },
+      } : {}),
+      ...(cfg.SPARK_QMD_MCP_URL ? {
+        qmd: { type: "sse", url: cfg.SPARK_QMD_MCP_URL },
+      } : {}),
       projects: projectServer,
     },
     allowedTools: [
-      "mcp__memory__*",
-      "mcp__qmd__*",
+      ...(cfg.MEMORY_MCP_COMMAND ? ["mcp__memory__*"] : []),
+      ...(cfg.SPARK_QMD_MCP_URL ? ["mcp__qmd__*"] : []),
       "mcp__projects__project_list",
       "mcp__projects__project_work",
       "mcp__projects__project_create",

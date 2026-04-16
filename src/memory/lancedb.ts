@@ -20,6 +20,10 @@ async function fetchStats(): Promise<Record<string, number>> {
 
   const cfg = getConfig();
 
+  if (!cfg.MEMORY_MCP_COMMAND || !cfg.MEMORY_MCP_SCRIPT) {
+    return {};
+  }
+
   try {
     const result = await new Promise<string>((resolve, reject) => {
       const proc = spawn(cfg.MEMORY_MCP_COMMAND, [cfg.MEMORY_MCP_SCRIPT], {

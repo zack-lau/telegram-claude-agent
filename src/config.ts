@@ -9,34 +9,28 @@ const envSchema = z.object({
       message: "ALLOWED_USERS must be a comma-separated list of positive Telegram user IDs",
     }),
 
-  // ── DGX Spark services (your-server) ──
+  // ── Optional: Memory — LanceDB via MCP stdio subprocess ──
+  // When set, the agent gets persistent long-term memory (store/recall/forget).
+  MEMORY_MCP_COMMAND: z.string().optional(),
+  MEMORY_MCP_SCRIPT: z.string().optional(),
 
-  // Memory MCP LanceDB (stdio subprocess)
-  MEMORY_MCP_COMMAND: z.string().default("./workspace/mcp-memory-lancedb/.venv/bin/python"),
-  MEMORY_MCP_SCRIPT: z.string().default("./workspace/mcp-memory-lancedb/server.py"),
+  // ── Optional: Doc search — QMD MCP server ──
+  // Enables the agent to search indexed markdown documents (notes, reports, docs).
+  SPARK_QMD_MCP_URL: z.string().url().optional(),
 
-  // Existing QMD Doc Search MCP (port 8181)
-  SPARK_QMD_MCP_URL: z.string().url(),
+  // ── Optional: Voice transcription — Whisper (OpenAI-compatible endpoint) ──
+  // When set, voice messages are transcribed and sent to the agent as text.
+  SPARK_WHISPER_URL: z.string().url().optional(),
 
-  // BGE-M3 embeddings (port 8001)
-  SPARK_EMBED_URL: z.string().url(),
+  // ── Optional: additional services used by workspace MCP config ──
+  // These are not used directly by the bot process; configure in .mcp.json.
+  SPARK_EMBED_URL: z.string().url().optional(),
   SPARK_EMBED_MODEL: z.string().default("BAAI/bge-m3"),
-
-  // BGE Reranker v2 M3 (port 8002)
-  SPARK_RERANK_URL: z.string().url(),
+  SPARK_RERANK_URL: z.string().url().optional(),
   SPARK_RERANK_MODEL: z.string().default("BAAI/bge-reranker-v2-m3"),
-
-  // Whisper transcription (port 8007)
-  SPARK_WHISPER_URL: z.string().url(),
-
-  // Kokoro TTS (port 8008)
-  SPARK_TTS_URL: z.string().url(),
-
-  // SearXNG web search (port 8080)
-  SPARK_SEARCH_URL: z.string().url(),
-
-  // Crawl4AI (port 11235)
-  SPARK_CRAWL_URL: z.string().url(),
+  SPARK_TTS_URL: z.string().url().optional(),
+  SPARK_SEARCH_URL: z.string().url().optional(),
+  SPARK_CRAWL_URL: z.string().url().optional(),
 
   // ── Agent SDK ──
   AGENT_CWD: z.string().default("./workspace"),

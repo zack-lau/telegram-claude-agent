@@ -9,6 +9,11 @@ export async function transcribeVoice(ctx: Context): Promise<string | null> {
   const cfg = getConfig();
 
   // Get file info — voice messages use ctx.message.voice, audio uses ctx.message.audio
+  if (!cfg.SPARK_WHISPER_URL) {
+    log("debug", "Voice transcription skipped — SPARK_WHISPER_URL not configured");
+    return null;
+  }
+
   const voice = ctx.message?.voice;
   const audio = ctx.message?.audio;
   const fileId = voice?.file_id ?? audio?.file_id;

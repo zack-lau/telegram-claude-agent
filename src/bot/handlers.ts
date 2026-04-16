@@ -16,7 +16,7 @@ import { markdownToTelegramHtml } from "./format.js";
 import { transcribeVoice } from "./voice.js";
 import { downloadPhoto } from "./photo.js";
 import { downloadDocument } from "./document.js";
-import { log } from "../config.js";
+import { log, getConfig } from "../config.js";
 import type { ImageAttachment } from "../agent/agent.js";
 
 let _bot: Bot | null = null;
@@ -199,7 +199,12 @@ export async function handleVoice(ctx: Context): Promise<void> {
     try {
       const text = await transcribeVoice(ctx);
       if (!text) {
-        await ctx.reply("couldn't transcribe that voice message");
+        const cfg = getConfig();
+        if (!cfg.SPARK_WHISPER_URL) {
+          await ctx.reply("voice transcription isn't set up on this instance.");
+        } else {
+          await ctx.reply("couldn't transcribe that voice message.");
+        }
         return;
       }
       await processQuery(ctx, chatId, text);
