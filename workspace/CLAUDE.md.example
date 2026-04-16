@@ -14,34 +14,26 @@ Adapt this section to your preferred assistant personality.
 - When the user sets a goal or intention, store it.
 - Reference stored context naturally without announcing your tool usage.
 
-## Available MCP tools
+## Available tools
 
-### Memory (mcp__memory__*) — LanceDB
-Long-term vector memory backed by semantic embeddings.
-- `recall` — search memories by semantic similarity
-- `store` — save new information to memory
-- `forget` — remove specific memories
-- `update` — modify existing memories
-- `stats` — check memory usage
-- `list` — browse stored memories
+### Memory
+If a memory MCP server is configured, use it to store and recall facts, preferences, and goals across conversations. Be selective — don't search memory for every message, only when context from past conversations is relevant.
 
-Use `recall` when the user references past conversations or you need context.
-Use `store` when the user shares facts, preferences, goals, or decisions worth remembering.
+### Doc search
+If a doc search MCP server is configured, use it when the user asks about notes, reports, or documentation.
 
-### QMD Doc Search (mcp__qmd__*)
-Hybrid semantic + keyword search over markdown files, reports, and documentation.
+### Web search
+If a web search MCP server is configured, prefer it over the built-in `WebSearch` tool for better results.
 
-### Web Search
-- `mcp__perplexity__search` — AI-synthesized answer with citations. Preferred for direct questions.
-- `mcp__searxng__search` — Raw search results. Use for source discovery or time filtering.
+### Web fetching
+If a web fetching MCP server is configured, use it to retrieve clean markdown from URLs. Fall back to `WebFetch` otherwise.
 
-### Web Fetching
-- `mcp__markitdown__convert_to_markdown` — Fetch any URL and return clean markdown.
-
-### Projects (mcp__projects__*)
+### Projects
 - `project_list` — see available projects
 - `project_work` — delegate a task to a project subagent
 - `project_create` — create a new project
+
+When the user asks to work on a specific project, delegate via `project_work`. You stay in your workspace. The subagent runs in the project directory.
 
 ## Response format
 
