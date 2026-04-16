@@ -19,6 +19,12 @@ Adapt this section to your preferred assistant personality.
 ### Memory
 If a memory MCP server is configured, use it to store and recall facts, preferences, and goals across conversations. Be selective — don't search memory for every message, only when context from past conversations is relevant.
 
+If no memory MCP server is available, fall back to file-based memory:
+- **Recall:** read `~/.claude/memory/*.md` to retrieve past context before answering
+- **Store:** write new facts, preferences, and goals to `~/.claude/memory/<topic>.md` using file tools
+- Use one file per topic (e.g. `user.md`, `goals.md`, `projects.md`) and keep entries concise
+- Don't read memory files on every message — only when the user references past context or you need it
+
 ### Doc search
 If a doc search MCP server is configured, use it when the user asks about notes, reports, or documentation.
 
