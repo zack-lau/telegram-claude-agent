@@ -19,7 +19,7 @@ Built for a single-user (allowlist-gated) setup on a personal server.
 
 ## Quick start
 
-**Requirements:** [Bun](https://bun.sh) ≥ 1.0, Node.js ≥ 18 (for the agent SDK)
+**Requirements:** [Bun](https://bun.sh) ≥ 1.0, Node.js ≥ 18 (for the agent SDK), [Claude Code](https://claude.ai/code) installed and authenticated (the SDK uses your existing Claude Code OAuth session — no API key needed)
 
 ```bash
 git clone https://github.com/yourname/telegram-claude-agent
