@@ -26,7 +26,7 @@ async function fetchStats(): Promise<Record<string, number>> {
 
   try {
     const result = await new Promise<string>((resolve, reject) => {
-      const proc = spawn(cfg.MEMORY_MCP_COMMAND, [cfg.MEMORY_MCP_SCRIPT], {
+      const proc = spawn(cfg.MEMORY_MCP_COMMAND!, [cfg.MEMORY_MCP_SCRIPT!], {
         stdio: ["pipe", "pipe", "pipe"],
         timeout: 15000,
       });
