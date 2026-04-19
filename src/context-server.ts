@@ -1,5 +1,5 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { randomUUID } from "crypto";
+import { randomUUID, timingSafeEqual } from "crypto";
 import { type Config, log } from "./config.js";
 
 const MAX_BODY_BYTES = 8 * 1024;
@@ -68,13 +68,13 @@ async function askMira(message: string, cfg: Config, signal: AbortSignal): Promi
   return answer;
 }
 
-export async function startContextServer(cfg: Config): Promise<void> {
+export async function startContextServer(cfg: Config): Promise<ReturnType<typeof Bun.serve>> {
   const portErr = await checkPortFree(cfg.CONTEXT_SERVER_PORT);
   if (portErr) {
     throw new Error(`Context server: ${portErr}`);
   }
 
-  Bun.serve({
+  const server = Bun.serve({
     port: cfg.CONTEXT_SERVER_PORT,
     maxRequestBodySize: MAX_BODY_BYTES,
     fetch: async (req) => {
@@ -84,7 +84,12 @@ export async function startContextServer(cfg: Config): Promise<void> {
       // Auth
       const auth = req.headers.get("authorization") ?? "";
       const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-      if (!token || token !== cfg.CONTEXT_SERVER_SECRET) {
+      const secretBuf = Buffer.from(cfg.CONTEXT_SERVER_SECRET);
+      const tokenBuf = Buffer.from(token);
+      const authed =
+        token.length === cfg.CONTEXT_SERVER_SECRET.length &&
+        timingSafeEqual(tokenBuf, secretBuf);
+      if (!authed) {
         log("warn", `[context-server] ${requestId} 401 unauthorized`);
         return new Response(null, { status: 401 });
       }
@@ -140,4 +145,5 @@ export async function startContextServer(cfg: Config): Promise<void> {
   });
 
   log("info", `Context server listening on port ${cfg.CONTEXT_SERVER_PORT}`);
+  return server;
 }

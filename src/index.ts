@@ -20,7 +20,7 @@ async function main() {
   loadSessions();
 
   // Start context server for get_project_context MCP tool
-  await startContextServer(cfg);
+  const contextServer = await startContextServer(cfg);
 
   // Create and start the bot
   const bot = createBot();
@@ -34,6 +34,7 @@ async function main() {
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     log("info", `Received ${signal}, shutting down...`);
+    contextServer.stop(true);
     bot.stop();
     process.exit(0);
   };
