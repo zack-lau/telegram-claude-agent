@@ -2,6 +2,7 @@ import { mkdirSync, existsSync } from "fs";
 import { getConfig, log } from "./config.js";
 import { createBot } from "./bot/bot.js";
 import { loadSessions } from "./agent/sessions.js";
+import { startContextServer } from "./context-server.js";
 
 async function main() {
   const cfg = getConfig();
@@ -17,6 +18,9 @@ async function main() {
 
   // Load session mappings
   loadSessions();
+
+  // Start context server for get_project_context MCP tool
+  await startContextServer(cfg);
 
   // Create and start the bot
   const bot = createBot();
