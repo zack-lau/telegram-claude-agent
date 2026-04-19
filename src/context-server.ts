@@ -19,12 +19,12 @@ async function checkPortFree(port: number): Promise<string | null> {
   return null;
 }
 
-async function askMira(message: string, cfg: Config): Promise<string> {
+async function askMira(message: string, cfg: Config, signal: AbortSignal): Promise<string> {
   const options: Record<string, unknown> = {
     maxTurns: 10,
-    permissionMode: "default",
+    permissionMode: "bypassPermissions",
     cwd: cfg.AGENT_CWD,
-    settingSources: ["project", "user"],
+    settingSources: [],
     systemPrompt:
       "You are a read-only assistant. Answer questions about projects, " +
       "decisions, and stored context using memory and document search. " +
@@ -46,6 +46,8 @@ async function askMira(message: string, cfg: Config): Promise<string> {
   };
 
   const stream = query({ prompt: message, options: options as any });
+  signal.addEventListener("abort", () => stream.close(), { once: true });
+
   const iterator = stream[Symbol.asyncIterator]();
   let answer = "";
   let done = false;
@@ -74,6 +76,7 @@ export async function startContextServer(cfg: Config): Promise<void> {
 
   Bun.serve({
     port: cfg.CONTEXT_SERVER_PORT,
+    maxRequestBodySize: MAX_BODY_BYTES,
     fetch: async (req) => {
       const requestId = randomUUID().slice(0, 8);
       const start = Date.now();
@@ -95,15 +98,6 @@ export async function startContextServer(cfg: Config): Promise<void> {
         });
       }
 
-      // Body size guard
-      const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
-      if (contentLength > MAX_BODY_BYTES) {
-        return new Response(JSON.stringify({ error: "request too large", request_id: requestId }), {
-          status: 400,
-          headers: { "content-type": "application/json" },
-        });
-      }
-
       // Parse body
       let message: string;
       try {
@@ -118,20 +112,19 @@ export async function startContextServer(cfg: Config): Promise<void> {
       }
 
       // Query with timeout
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), QUERY_TIMEOUT_MS);
       try {
-        const answer = await Promise.race([
-          askMira(message, cfg),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("timeout")), QUERY_TIMEOUT_MS),
-          ),
-        ]);
+        const answer = await askMira(message, cfg, ac.signal);
+        clearTimeout(timer);
         const dur = Date.now() - start;
         log("info", `[context-server] ${requestId} 200 ${dur}ms`);
         return new Response(JSON.stringify({ answer, request_id: requestId }), {
           headers: { "content-type": "application/json" },
         });
       } catch (err) {
-        const isTimeout = err instanceof Error && err.message === "timeout";
+        clearTimeout(timer);
+        const isTimeout = ac.signal.aborted;
         const dur = Date.now() - start;
         log(isTimeout ? "warn" : "error", `[context-server] ${requestId} ${isTimeout ? "503" : "500"} ${dur}ms`, err);
         const status = isTimeout ? 503 : 500;
