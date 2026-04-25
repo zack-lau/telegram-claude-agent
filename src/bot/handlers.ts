@@ -304,7 +304,7 @@ async function processQuery(
 
       const taskId = backgroundTaskId;
       backgroundPromise
-        .then(async (followUpText) => {
+        .then(async (followUpMessages) => {
           try {
             if (!isJobRelevant(chatId, taskId)) {
               log("info", `Background job ${taskId} stale for chat ${chatId}, discarding`);
@@ -312,8 +312,10 @@ async function processQuery(
               return;
             }
             removeBackgroundJob(chatId, taskId);
-            if (followUpText.trim()) {
-              await sendFormattedResponse(ctx, followUpText);
+            for (const msg of followUpMessages) {
+              if (msg.trim()) {
+                await sendFormattedResponse(ctx, msg);
+              }
             }
           } catch (err) {
             log("error", `Background job result delivery failed for chat ${chatId}`, err);

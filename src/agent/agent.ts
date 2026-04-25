@@ -13,7 +13,7 @@ export interface ImageAttachment {
 }
 
 export interface StreamingResult {
-  backgroundPromise: Promise<string> | null;
+  backgroundPromise: Promise<string[]> | null;
   sessionId: string | null;
 }
 
@@ -125,8 +125,11 @@ export async function sendMessageStreaming(
         const bgMessageCount = getMessageCount(chatId);
         const bgGeneration = getGeneration(chatId);
 
-        const backgroundPromise = (async (): Promise<string> => {
-          let followUpText = "";
+        const backgroundPromise = (async (): Promise<string[]> => {
+          // Each assistant turn becomes a separate Telegram message so that
+          // "working on it..." and the actual result don't collapse into one.
+          const messages: string[] = [];
+          let currentText = "";
           try {
             let bgDone = false;
             while (!bgDone) {
@@ -134,21 +137,21 @@ export async function sendMessageStreaming(
               if (bgNext.done) { bgDone = true; break; }
               const bgMessage = bgNext.value;
 
-              // Accumulate assistant text — deliver as one consolidated message
-              // via the backgroundPromise .then() handler, not per-chunk, to
-              // avoid flooding the chat with fragmented messages.
               if (bgMessage.type === "assistant" && Array.isArray(bgMessage.message?.content)) {
+                // Flush previous turn before starting a new one
+                if (currentText) { messages.push(currentText); currentText = ""; }
                 for (const block of bgMessage.message.content) {
                   if (block.type === "text" && block.text) {
-                    followUpText += (followUpText ? "\n\n" : "") + block.text;
+                    currentText += (currentText ? "\n\n" : "") + block.text;
                   }
                 }
               }
-              // Capture task_notification summary
+              // task_notification gets its own message
               if (bgMessage.type === "system" && bgMessage.subtype === "task_notification") {
                 const summary = (bgMessage as Record<string, unknown>).summary as string | undefined;
                 if (summary) {
-                  followUpText += (followUpText ? "\n\n" : "") + summary;
+                  if (currentText) { messages.push(currentText); currentText = ""; }
+                  messages.push(summary);
                 }
               }
               if (bgMessage.type === "result") {
@@ -161,14 +164,16 @@ export async function sendMessageStreaming(
             log("error", `Background stream failed for chat ${chatId}`, err);
             throw err;
           }
+          if (currentText) messages.push(currentText);
           const elapsed = (performance.now() - start).toFixed(0);
-          log("info", `Chat ${chatId}: background completed in ${elapsed}ms (${followUpText.length} chars)`);
+          const totalChars = messages.reduce((s, m) => s + m.length, 0);
+          log("info", `Chat ${chatId}: background completed in ${elapsed}ms (${totalChars} chars, ${messages.length} messages)`);
           // Only persist the background session if no foreground message has
           // advanced the session since we started.
           if (sessionId && getMessageCount(chatId) === bgMessageCount && getGeneration(chatId) === bgGeneration) {
             setSessionId(chatId, sessionId);
           }
-          return followUpText;
+          return messages;
         })();
 
         return { backgroundPromise, sessionId: bgSessionId };

@@ -31,11 +31,15 @@ mock.module("../src/memory/project-tools.js", () => ({
 const mockGetSessionId = mock(() => null as string | null);
 const mockSetSessionId = mock((_chatId: number, _sessionId: string) => {});
 const mockHasBackgroundJobs = mock(() => false);
+const mockGetMessageCount = mock(() => 0);
+const mockGetGeneration = mock(() => 0);
 
 mock.module("../src/agent/sessions.js", () => ({
   getSessionId: mockGetSessionId,
   setSessionId: mockSetSessionId,
   hasBackgroundJobs: mockHasBackgroundJobs,
+  getMessageCount: mockGetMessageCount,
+  getGeneration: mockGetGeneration,
 }));
 
 // Mock hooks
@@ -141,10 +145,10 @@ describe("sendMessageStreaming", () => {
     expect(onBg).toHaveBeenCalledTimes(1);
     expect(bgTasks).toEqual(["task-abc"]);
 
-    // backgroundPromise exists and resolves with follow-up text
+    // backgroundPromise exists and resolves with follow-up messages (one per turn)
     expect(result.backgroundPromise).not.toBeNull();
     const followUp = await result.backgroundPromise!;
-    expect(followUp).toBe("follow-up text");
+    expect(followUp).toEqual(["follow-up text"]);
 
     // sessionId returned is from before the background handoff
     expect(result.sessionId).toBe("sess-bg");
@@ -169,7 +173,7 @@ describe("sendMessageStreaming", () => {
     expect(onBg).not.toHaveBeenCalled();
   });
 
-  test("background path does NOT persist session to main map", async () => {
+  test("background path persists foreground session early on task_started", async () => {
     mockMessages = [
       { type: "system", subtype: "init", session_id: "sess-bg2" },
       { type: "system", subtype: "task_started", task_id: "task-xyz" },
@@ -181,11 +185,11 @@ describe("sendMessageStreaming", () => {
 
     const result = await sendMessageStreaming(42, "bg test", onText, onBg);
 
+    // Early persist fires immediately when task_started is detected
+    expect(mockSetSessionId).toHaveBeenCalledWith(42, "sess-bg2");
+
     // Wait for background to complete
     await result.backgroundPromise;
-
-    // setSessionId should NOT have been called (background path skips persistence)
-    expect(mockSetSessionId).not.toHaveBeenCalled();
   });
 
   test("backgroundPromise includes task_notification summary", async () => {
@@ -206,7 +210,7 @@ describe("sendMessageStreaming", () => {
     const result = await sendMessageStreaming(42, "research", onText, onBg);
     const followUp = await result.backgroundPromise!;
 
-    expect(followUp).toContain("agent found 3 files");
+    expect(followUp).toContain("agent found 3 files"); // array contains this string as an element
   });
 
   test("iterator is not closed on background handoff (can continue iteration)", async () => {
@@ -230,7 +234,7 @@ describe("sendMessageStreaming", () => {
     expect(result.backgroundPromise).not.toBeNull();
 
     const followUp = await result.backgroundPromise!;
-    expect(followUp).toBe("post-handoff text");
+    expect(followUp).toEqual(["post-handoff text"]);
   });
 
   test("exports StreamingResult and ImageAttachment types", async () => {
