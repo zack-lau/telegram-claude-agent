@@ -210,7 +210,33 @@ describe("sendMessageStreaming", () => {
     const result = await sendMessageStreaming(42, "research", onText, onBg);
     const followUp = await result.backgroundPromise!;
 
-    expect(followUp).toContain("agent found 3 files"); // array contains this string as an element
+    // "launching agent" is pre-task_started foreground text (sent via onText, not in array)
+    // task_notification summary is its own array entry
+    expect(followUp).toEqual(["agent found 3 files"]);
+  });
+
+  test("multiple assistant turns produce separate messages", async () => {
+    mockMessages = [
+      { type: "system", subtype: "init", session_id: "sess-multi" },
+      { type: "system", subtype: "task_started", task_id: "task-multi" },
+      {
+        type: "assistant",
+        message: { content: [{ type: "text", text: "working on it" }] },
+      },
+      {
+        type: "assistant",
+        message: { content: [{ type: "text", text: "done, here's the result" }] },
+      },
+      { type: "result", session_id: "sess-multi" },
+    ];
+
+    const onText = mock(async () => {});
+    const onBg = mock(() => {});
+
+    const result = await sendMessageStreaming(42, "do thing", onText, onBg);
+    const followUp = await result.backgroundPromise!;
+
+    expect(followUp).toEqual(["working on it", "done, here's the result"]);
   });
 
   test("iterator is not closed on background handoff (can continue iteration)", async () => {

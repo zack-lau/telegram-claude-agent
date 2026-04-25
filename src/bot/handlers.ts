@@ -314,7 +314,11 @@ async function processQuery(
             removeBackgroundJob(chatId, taskId);
             for (const msg of followUpMessages) {
               if (msg.trim()) {
-                await sendFormattedResponse(ctx, msg);
+                try {
+                  await sendFormattedResponse(ctx, msg);
+                } catch (err) {
+                  log("error", `Failed to send follow-up chunk for chat ${chatId}`, err);
+                }
               }
             }
           } catch (err) {
