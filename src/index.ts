@@ -19,7 +19,7 @@ async function main() {
   // Load session mappings
   loadSessions();
 
-  // Start context server for get_project_context MCP tool
+  // Start context server for ask_mira / notify_mira MCP tools
   const contextServer = await startContextServer(cfg);
 
   // Create and start the bot

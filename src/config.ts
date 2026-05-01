@@ -48,7 +48,7 @@ const envSchema = z.object({
   // Logging
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 
-  // ── Context server — HTTP endpoint for get_project_context MCP tool ──
+  // ── Context server — HTTP endpoint for ask_mira / notify_mira MCP tools ──
   CONTEXT_SERVER_PORT: z.coerce.number().default(3001),
   CONTEXT_SERVER_SECRET: z.string().min(1),
 });
