@@ -111,12 +111,14 @@ async function sendFormattedResponse(ctx: Context, raw: string): Promise<void> {
   });
   const wrapped = current.catch(() => {});
   sendLocks.set(chatId, wrapped);
-  await current;
+  // Register cleanup BEFORE awaiting so it fires even if current rejects.
+  // (await current throws on reject, skipping any code after it.)
   wrapped.finally(() => {
     if (sendLocks.get(chatId) === wrapped) {
       sendLocks.delete(chatId);
     }
   });
+  await current;
 }
 
 // ── Command handlers ──
@@ -136,6 +138,9 @@ export async function handleNew(ctx: Context): Promise<void> {
   const chatId = ctx.chat?.id;
   if (!chatId) return;
 
+  // Bump generation and clear queued work. Any in-flight sendMessageStreaming call
+  // keeps running but its session-persist gate (getGeneration === startGeneration)
+  // will fail, so it won't clobber the new session.
   queueGenerations.set(chatId, (queueGenerations.get(chatId) ?? 0) + 1);
   chatQueues.delete(chatId);
   incrementGeneration(chatId);

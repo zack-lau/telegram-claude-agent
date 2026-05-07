@@ -21,7 +21,10 @@ const envSchema = z.object({
 
   // ── Optional: Doc search — QMD MCP server ──
   // Enables the agent to search indexed markdown documents (notes, reports, docs).
-  SPARK_QMD_MCP_URL: z.string().url().optional(),
+  SPARK_QMD_MCP_URL: z.string().url().refine(
+    (u) => u.startsWith("http://") || u.startsWith("https://"),
+    { message: "SPARK_QMD_MCP_URL must use http or https" },
+  ).optional(),
 
   // ── Optional: Voice transcription — Whisper (OpenAI-compatible endpoint) ──
   // When set, voice messages are transcribed and sent to the agent as text.

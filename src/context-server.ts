@@ -119,7 +119,7 @@ async function askMira(message: string, cfg: Config, signal: AbortSignal): Promi
   };
 
   const stream = query({ prompt: message, options: options as any });
-  signal.addEventListener("abort", () => stream.close(), { once: true });
+  signal.addEventListener("abort", () => { try { stream.close(); } catch {} }, { once: true });
 
   const iterator = stream[Symbol.asyncIterator]();
   let answer = "";
@@ -322,7 +322,7 @@ export async function startContextServer(cfg: Config): Promise<ReturnType<typeof
           drive_url: typeof body.drive_url === "string" ? body.drive_url : undefined,
           action: action as Notification["action"],
           priority: priority as Notification["priority"],
-          artifacts: Array.isArray(body.artifacts) ? body.artifacts.filter((a): a is string => typeof a === "string") : undefined,
+          artifacts: Array.isArray(body.artifacts) ? body.artifacts.filter((a): a is string => typeof a === "string").slice(0, 50) : undefined,
           received_at: new Date().toISOString(),
         };
 

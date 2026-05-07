@@ -13,22 +13,27 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB per image
 const MAX_IMAGES = 5;
 const ALLOWED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 
-// Per-turn timeout: generous to allow slow tool calls, but prevents forever-hung network
+// Per-turn timeout: generous to allow slow tool calls, but prevents forever-hung network.
+// Note: when the timeout fires, the underlying SDK stream cannot be cancelled (no AbortSignal
+// support in the current SDK). The stream will drain in the background, but the bot moves on.
 const TURN_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 async function nextWithTimeout<T>(
   iter: AsyncIterator<T>,
   label: string,
 ): Promise<IteratorResult<T>> {
-  return Promise.race([
-    iter.next(),
-    new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Stream stalled: ${label} timed out after ${TURN_TIMEOUT_MS / 1000}s`)),
-        TURN_TIMEOUT_MS,
-      )
-    ),
-  ]);
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error(`Stream stalled: ${label} timed out after ${TURN_TIMEOUT_MS / 1000}s`)),
+      TURN_TIMEOUT_MS,
+    );
+  });
+  try {
+    return await Promise.race([iter.next(), timeout]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export interface ImageAttachment {
@@ -143,6 +148,20 @@ export async function sendMessageStreaming(
   const stream = query({ prompt, options: options as any });
   const iterator = stream[Symbol.asyncIterator]();
 
+  // Once-guard: ensures iterator.return() is called exactly once across all paths
+  // (foreground catch, foreground normal exit, background finally).
+  let iteratorClosed = false;
+  function closeIterator() {
+    if (!iteratorClosed) {
+      iteratorClosed = true;
+      iterator.return?.();
+    }
+  }
+
+  // Tracks whether the iterator was handed off to the background IIFE.
+  // The outer finally skips cleanup when true — background owns the iterator.
+  let handedOffToBackground = false;
+
   try {
     let done = false;
     while (!done) {
@@ -171,7 +190,13 @@ export async function sendMessageStreaming(
       // Detect background agent — task_started is our early signal
       if (message.type === "system" && message.subtype === "task_started") {
         const taskId = String((message as Record<string, unknown>).task_id ?? "");
-        onBackgroundStarted(taskId);
+        try {
+          onBackgroundStarted(taskId);
+        } catch (cbErr) {
+          log("error", `onBackgroundStarted callback failed for chat ${chatId}`, cbErr);
+          closeIterator();
+          throw cbErr;
+        }
 
         // Hand the iterator to a background promise — it continues from here
         const bgSessionId = sessionId;
@@ -229,8 +254,7 @@ export async function sendMessageStreaming(
             log("error", `Background stream failed for chat ${chatId}`, err);
             throw err;
           } finally {
-            // Always attempt to release the underlying stream on background exit.
-            iterator.return?.();
+            closeIterator();
           }
           if (currentText) messages.push(currentText);
           const elapsed = (performance.now() - start).toFixed(0);
@@ -252,6 +276,7 @@ export async function sendMessageStreaming(
           log("error", `Background promise rejected for chat ${chatId} (pre-handler window)`, err);
         });
 
+        handedOffToBackground = true;
         return { backgroundPromise, sessionId: bgSessionId };
       }
 
@@ -269,10 +294,13 @@ export async function sendMessageStreaming(
       }
     }
   } catch (err) {
-    // Clean up the stream on foreground error (background IIFE never started).
-    iterator.return?.();
+    if (!handedOffToBackground) closeIterator();
     log("error", `Query failed for chat ${chatId}`, err);
     throw err;
+  } finally {
+    // Normal foreground completion (no task_started): release the iterator.
+    // Skipped when handed off — background IIFE owns it and calls closeIterator() itself.
+    if (!handedOffToBackground) closeIterator();
   }
 
   // Foreground path — persist session unless /new was called while we were running
