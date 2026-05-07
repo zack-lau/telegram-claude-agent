@@ -3,6 +3,7 @@ import { getConfig, log } from "./config.js";
 import { createBot } from "./bot/bot.js";
 import { loadSessions } from "./agent/sessions.js";
 import { startContextServer } from "./context-server.js";
+import { startScheduler } from "./scheduler.js";
 
 async function main() {
   const cfg = getConfig();
@@ -24,6 +25,9 @@ async function main() {
 
   // Create and start the bot
   const bot = createBot();
+
+  // Start reminder scheduler
+  startScheduler(bot);
 
   await bot.api.setMyCommands([
     { command: "new", description: "Start a fresh conversation" },
