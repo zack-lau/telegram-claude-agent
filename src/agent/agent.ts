@@ -7,6 +7,30 @@ import { getConfig, log } from "../config.js";
 
 const projectServer = createProjectMcpServer();
 
+// Input size guards
+const MAX_MESSAGE_LENGTH = 8_000;   // chars
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB per image
+const MAX_IMAGES = 5;
+const ALLOWED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+
+// Per-turn timeout: generous to allow slow tool calls, but prevents forever-hung network
+const TURN_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+
+async function nextWithTimeout<T>(
+  iter: AsyncIterator<T>,
+  label: string,
+): Promise<IteratorResult<T>> {
+  return Promise.race([
+    iter.next(),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Stream stalled: ${label} timed out after ${TURN_TIMEOUT_MS / 1000}s`)),
+        TURN_TIMEOUT_MS,
+      )
+    ),
+  ]);
+}
+
 export interface ImageAttachment {
   base64: string;
   mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
@@ -25,9 +49,35 @@ export async function sendMessageStreaming(
   bot?: Bot,
   images?: ImageAttachment[],
 ): Promise<StreamingResult> {
+  // ── Input validation ──
+  if (userMessage.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`Message too long (${userMessage.length} chars, max ${MAX_MESSAGE_LENGTH})`);
+  }
+  if (images) {
+    if (images.length > MAX_IMAGES) {
+      throw new Error(`Too many images (${images.length}, max ${MAX_IMAGES})`);
+    }
+    for (const img of images) {
+      if (!ALLOWED_MEDIA_TYPES.has(img.mediaType)) {
+        throw new Error(`Unsupported image type: ${img.mediaType}`);
+      }
+      // Exact base64 decode size: each 4-char group = 3 bytes, minus padding chars
+      const padding = (img.base64.match(/=+$/) ?? [""])[0].length;
+      const exactBytes = Math.floor(img.base64.length * 3 / 4) - padding;
+      if (exactBytes > MAX_IMAGE_SIZE_BYTES) {
+        throw new Error(`Image too large (${Math.round(exactBytes / 1024)}KB, max ${MAX_IMAGE_SIZE_BYTES / 1024}KB)`);
+      }
+    }
+  }
+
   const cfg = getConfig();
   const start = performance.now();
 
+  // Concurrency note: handlers.ts serialises per-chat requests via chatQueues,
+  // so getSessionId/setSessionId are never called concurrently for the same chatId
+  // from the foreground path. The background IIFE uses generation/messageCount
+  // snapshots (bgGeneration, bgMessageCount) to detect stale sessions and avoid
+  // clobbering state advanced by a subsequent foreground message.
   const existingSessionId = getSessionId(chatId);
   const startGeneration = getGeneration(chatId);
 
@@ -35,9 +85,12 @@ export async function sendMessageStreaming(
     maxTurns: cfg.AGENT_MAX_TURNS,
     permissionMode: cfg.AGENT_PERMISSION_MODE,
     cwd: cfg.AGENT_CWD,
-    settingSources: ["project", "user"],
+    settingSources: ["project"],
     ...(bot ? { hooks: buildHooksForChat(bot, chatId) } : {}),
     mcpServers: {
+      // MEMORY_MCP_COMMAND/SCRIPT come from env vars validated by config.ts.
+      // The SDK invokes them via spawn (not shell), so metacharacter injection
+      // is not possible as long as the SDK does not use shell:true.
       ...(cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT ? {
         memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] },
       } : {}),
@@ -52,8 +105,11 @@ export async function sendMessageStreaming(
       "mcp__projects__project_list",
       "mcp__projects__project_work",
       "mcp__projects__project_create",
-      "Read", "Glob", "Grep", "Bash",
-      "Agent",
+      "Read", "Glob", "Grep",
+      // Bash is intentionally exposed: this is a single-owner personal bot.
+      // The only user is also the system owner, so arbitrary shell execution
+      // is a feature, not a vulnerability.
+      "Bash",
     ],
   };
 
@@ -80,16 +136,17 @@ export async function sendMessageStreaming(
 
   let sessionId: string | null = null;
 
-  try {
-    const stream = query({ prompt, options: options as any });
-    // Use raw iterator protocol so we never call .return() on the generator.
-    // for-await-of calls .return() on early exit, which closes the stream
-    // and prevents the background IIFE from continuing iteration.
-    const iterator = stream[Symbol.asyncIterator]();
+  // Raw iterator protocol: we intentionally avoid for-await-of because it calls
+  // .return() on early exit, which would close the stream before the background
+  // IIFE can continue reading from the same iterator. The iterator is a single
+  // consumer — foreground reads until task_started, then hands off to background.
+  const stream = query({ prompt, options: options as any });
+  const iterator = stream[Symbol.asyncIterator]();
 
+  try {
     let done = false;
     while (!done) {
-      const next = await iterator.next();
+      const next = await nextWithTimeout(iterator, "foreground");
       if (next.done) { done = true; break; }
       const message = next.value;
 
@@ -102,7 +159,11 @@ export async function sendMessageStreaming(
       if (message.type === "assistant" && Array.isArray(message.message?.content)) {
         for (const block of message.message.content) {
           if (block.type === "text" && block.text) {
-            await onText(block.text);
+            try {
+              await onText(block.text);
+            } catch (cbErr) {
+              log("error", `onText callback failed for chat ${chatId}`, cbErr);
+            }
           }
         }
       }
@@ -120,20 +181,24 @@ export async function sendMessageStreaming(
         if (bgSessionId) {
           setSessionId(chatId, bgSessionId);
         }
-        // Snapshot message count after early persist — the background closure
-        // uses this to avoid clobbering a session advanced by foreground messages.
+        // Snapshot message count and generation — the background closure uses these
+        // to avoid clobbering a session advanced by subsequent foreground messages.
         const bgMessageCount = getMessageCount(chatId);
         const bgGeneration = getGeneration(chatId);
 
         const backgroundPromise = (async (): Promise<string[]> => {
           // Each assistant turn becomes a separate Telegram message so that
           // "working on it..." and the actual result don't collapse into one.
+          // Use a local sessionId to avoid mutating the outer variable from inside
+          // the closure, which is a code smell even though the generation gate
+          // prevents it from causing actual harm.
+          let localSessionId: string | null = bgSessionId;
           const messages: string[] = [];
           let currentText = "";
           try {
             let bgDone = false;
             while (!bgDone) {
-              const bgNext = await iterator.next();
+              const bgNext = await nextWithTimeout(iterator, "background");
               if (bgNext.done) { bgDone = true; break; }
               const bgMessage = bgNext.value;
 
@@ -156,13 +221,16 @@ export async function sendMessageStreaming(
               }
               if (bgMessage.type === "result") {
                 if (bgMessage.session_id) {
-                  sessionId = bgMessage.session_id;
+                  localSessionId = bgMessage.session_id;
                 }
               }
             }
           } catch (err) {
             log("error", `Background stream failed for chat ${chatId}`, err);
             throw err;
+          } finally {
+            // Always attempt to release the underlying stream on background exit.
+            iterator.return?.();
           }
           if (currentText) messages.push(currentText);
           const elapsed = (performance.now() - start).toFixed(0);
@@ -170,11 +238,19 @@ export async function sendMessageStreaming(
           log("info", `Chat ${chatId}: background completed in ${elapsed}ms (${totalChars} chars, ${messages.length} messages)`);
           // Only persist the background session if no foreground message has
           // advanced the session since we started.
-          if (sessionId && getMessageCount(chatId) === bgMessageCount && getGeneration(chatId) === bgGeneration) {
-            setSessionId(chatId, sessionId);
+          if (localSessionId && getMessageCount(chatId) === bgMessageCount && getGeneration(chatId) === bgGeneration) {
+            setSessionId(chatId, localSessionId);
           }
           return messages;
         })();
+
+        // Attach a logging catch immediately so the promise is never unhandled
+        // in the window before handlers.ts attaches its own .catch().
+        // This does NOT swallow the rejection — handlers.ts's .catch() is chained
+        // on the original promise reference and still fires independently.
+        backgroundPromise.catch((err) => {
+          log("error", `Background promise rejected for chat ${chatId} (pre-handler window)`, err);
+        });
 
         return { backgroundPromise, sessionId: bgSessionId };
       }
@@ -193,6 +269,8 @@ export async function sendMessageStreaming(
       }
     }
   } catch (err) {
+    // Clean up the stream on foreground error (background IIFE never started).
+    iterator.return?.();
     log("error", `Query failed for chat ${chatId}`, err);
     throw err;
   }

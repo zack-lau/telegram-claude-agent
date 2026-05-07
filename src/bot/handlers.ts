@@ -16,6 +16,7 @@ import { markdownToTelegramHtml } from "./format.js";
 import { transcribeVoice } from "./voice.js";
 import { downloadPhoto } from "./photo.js";
 import { downloadDocument } from "./document.js";
+import { extractFileMarkers, sendFile } from "./send-file.js";
 import { log, getConfig } from "../config.js";
 import type { ImageAttachment } from "../agent/agent.js";
 
@@ -72,27 +73,50 @@ async function sendFormattedResponse(ctx: Context, raw: string): Promise<void> {
   const chatId = ctx.chat!.id;
   const prev = sendLocks.get(chatId) ?? Promise.resolve();
   const current = prev.then(async () => {
-    const html = markdownToTelegramHtml(raw);
-    if (html.length <= 4096) {
-      await ctx.reply(html, { parse_mode: "HTML" }).catch(async () => {
-        await ctx.reply(raw).catch((e) => {
-          log("error", `Failed to send message to chat ${chatId}`, e);
-        });
-      });
-    } else {
-      const chunks = splitMessage(raw, 3500);
-      for (const chunk of chunks) {
-        const chunkHtml = markdownToTelegramHtml(chunk);
-        await ctx.reply(chunkHtml, { parse_mode: "HTML" }).catch(async () => {
-          await ctx.reply(chunk).catch((e) => {
-            log("error", `Failed to send chunk to chat ${chatId}`, e);
+    // Extract file markers before processing text
+    const { cleanedText, filePaths } = extractFileMarkers(raw);
+
+    // Send text response if there's any remaining text
+    if (cleanedText) {
+      const html = markdownToTelegramHtml(cleanedText);
+      if (html.length <= 4096) {
+        await ctx.reply(html, { parse_mode: "HTML" }).catch(async () => {
+          await ctx.reply(cleanedText).catch((e) => {
+            log("error", `Failed to send message to chat ${chatId}`, e);
           });
         });
+      } else {
+        const chunks = splitMessage(cleanedText, 3500);
+        for (const chunk of chunks) {
+          const chunkHtml = markdownToTelegramHtml(chunk);
+          await ctx.reply(chunkHtml, { parse_mode: "HTML" }).catch(async () => {
+            await ctx.reply(chunk).catch((e) => {
+              log("error", `Failed to send chunk to chat ${chatId}`, e);
+            });
+          });
+        }
+      }
+    }
+
+    // Send any extracted files
+    for (const filePath of filePaths) {
+      try {
+        await sendFile(ctx, filePath);
+      } catch (err) {
+        log("error", `Failed to send file ${filePath} to chat ${chatId}`, err);
+        const fileName = filePath.split("/").pop() || "unknown";
+        await ctx.reply(`⚠️ Couldn't send file: ${fileName}`).catch(() => {});
       }
     }
   });
-  sendLocks.set(chatId, current.catch(() => {}));
+  const wrapped = current.catch(() => {});
+  sendLocks.set(chatId, wrapped);
   await current;
+  wrapped.finally(() => {
+    if (sendLocks.get(chatId) === wrapped) {
+      sendLocks.delete(chatId);
+    }
+  });
 }
 
 // ── Command handlers ──
@@ -337,10 +361,19 @@ async function processQuery(
       return; // Release the queue
     }
   } catch (err) {
-    log("error", `Message handling failed for chat ${chatId}`, err);
-    await ctx.reply(
-      "something went wrong processing your message. try again or /new",
-    );
+    const isMaxTurns =
+      err instanceof Error && err.message.includes("maximum number of turns");
+    if (isMaxTurns) {
+      log("warn", `Message handling failed for chat ${chatId}: max turns`);
+      await ctx.reply(
+        "hit the turn limit on that one — task was too complex for a single shot. try /new and break it into smaller steps.",
+      );
+    } else {
+      log("error", `Message handling failed for chat ${chatId}`, err);
+      await ctx.reply(
+        "something went wrong processing your message. try again or /new",
+      );
+    }
   } finally {
     clearInterval(typingInterval);
   }

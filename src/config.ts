@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { resolve } from "path";
+import { statSync } from "fs";
 
 const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1),
@@ -11,7 +13,10 @@ const envSchema = z.object({
 
   // ── Optional: Memory — LanceDB via MCP stdio subprocess ──
   // When set, the agent gets persistent long-term memory (store/recall/forget).
-  MEMORY_MCP_COMMAND: z.string().optional(),
+  MEMORY_MCP_COMMAND: z
+    .string()
+    .regex(/^[^\s;&|$`(){}\\]+$/, "MEMORY_MCP_COMMAND must be a plain executable path with no shell metacharacters")
+    .optional(),
   MEMORY_MCP_SCRIPT: z.string().optional(),
 
   // ── Optional: Doc search — QMD MCP server ──
@@ -33,7 +38,13 @@ const envSchema = z.object({
   SPARK_CRAWL_URL: z.string().url().optional(),
 
   // ── Agent SDK ──
-  AGENT_CWD: z.string().default("./workspace"),
+  AGENT_CWD: z
+    .string()
+    .default("./workspace")
+    .transform((p) => resolve(p))
+    .refine((p) => { try { return statSync(p).isDirectory(); } catch { return false; } }, {
+      message: "AGENT_CWD must be an existing directory",
+    }),
   AGENT_MAX_TURNS: z.coerce.number().default(15),
   AGENT_PERMISSION_MODE: z
     .enum(["bypassPermissions", "acceptEdits", "default"])

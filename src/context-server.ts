@@ -210,7 +210,7 @@ async function processNotification(notification: Notification, cfg: Config): Pro
       "You have access to memory, project tools, QMD doc search, and filesystem tools. " +
       "You do NOT have direct Telegram access — store info in memory for Mira to relay. " +
       "Follow the processing instructions carefully.",
-    settingSources: ["project"],
+    settingSources: ["user", "project"],
     mcpServers: {
       ...(cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT
         ? { memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] } }
