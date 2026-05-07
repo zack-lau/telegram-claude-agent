@@ -360,10 +360,14 @@ async function processQuery(
       const bgTypingInterval = setInterval(() => {
         ctx.replyWithChatAction("typing").catch(() => {});
       }, 3000);
+      // Safety net: background promise should reject via TURN_TIMEOUT_MS if the API
+      // hangs, but clear the interval unconditionally after 20 min as a last resort.
+      const bgTypingMaxTimer = setTimeout(() => clearInterval(bgTypingInterval), 20 * 60 * 1000);
 
       const taskId = backgroundTaskId;
       backgroundPromise
         .then(async (followUpMessages) => {
+          clearTimeout(bgTypingMaxTimer);
           clearInterval(bgTypingInterval);
           try {
             if (!isJobRelevant(chatId, taskId)) {
@@ -386,6 +390,7 @@ async function processQuery(
           }
         })
         .catch(async (err) => {
+          clearTimeout(bgTypingMaxTimer);
           clearInterval(bgTypingInterval);
           log("error", `Background job ${taskId} failed for chat ${chatId}`, err);
           const stale = !isJobRelevant(chatId, taskId);

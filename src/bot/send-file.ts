@@ -93,9 +93,8 @@ export async function validateFilePath(
   }
 
   // Check allowlist with strict directory boundary
-  const allowed = ALLOWED_DIRECTORIES.some(
-    (dir) => realPath.startsWith(dir) && (realPath.length === dir.length || realPath[dir.length - 1] === "/" || realPath[dir.length] === "/")
-  );
+  // All dirs end with "/" so startsWith already enforces the boundary
+  const allowed = ALLOWED_DIRECTORIES.some((dir) => realPath.startsWith(dir));
   if (!allowed) {
     return { valid: false, error: "file is outside allowed directories" };
   }
@@ -130,8 +129,8 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** Send an image (PNG, JPG, etc.) to a chat */
-export async function sendPhoto(
+/** Send an image (PNG, JPG, etc.) to a chat — internal, no path validation */
+async function sendPhoto(
   ctx: Context,
   filePath: string,
   caption?: string,
@@ -143,8 +142,8 @@ export async function sendPhoto(
   });
 }
 
-/** Send any file/document to a chat */
-export async function sendDocument(
+/** Send any file/document to a chat — internal, no path validation */
+async function sendDocument(
   ctx: Context,
   filePath: string,
   caption?: string,
