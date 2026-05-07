@@ -1,4 +1,5 @@
 import { type Bot, type Context } from "grammy";
+import path from "node:path";
 import { sendMessageStreaming } from "../agent/agent.js";
 import {
   clearSession,
@@ -104,7 +105,7 @@ async function sendFormattedResponse(ctx: Context, raw: string): Promise<void> {
         await sendFile(ctx, filePath);
       } catch (err) {
         log("error", `Failed to send file ${filePath} to chat ${chatId}`, err);
-        const fileName = filePath.split("/").pop() || "unknown";
+        const fileName = path.basename(filePath) || "unknown";
         await ctx.reply(`⚠️ Couldn't send file: ${fileName}`).catch(() => {});
       }
     }

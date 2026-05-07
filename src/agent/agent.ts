@@ -143,20 +143,16 @@ export async function sendMessageStreaming(
 
   let sessionId: string | null = null;
 
-  // Raw iterator protocol: we intentionally avoid for-await-of because it calls
-  // .return() on early exit, which would close the stream before the background
-  // IIFE can continue reading from the same iterator. The iterator is a single
-  // consumer — foreground reads until task_started, then hands off to background.
-  const stream = query({ prompt, options: options as any });
-  const iterator = stream[Symbol.asyncIterator]();
-
   // Once-guard: ensures iterator.return() is called exactly once across all paths
   // (foreground catch, foreground normal exit, background finally).
+  // iterator declared here so closeIterator is available in the catch/finally below;
+  // assigned inside the try so any synchronous query() throw is caught properly.
+  let iterator: AsyncIterator<Awaited<ReturnType<typeof query>> extends AsyncIterable<infer T> ? T : never>;
   let iteratorClosed = false;
   function closeIterator() {
     if (!iteratorClosed) {
       iteratorClosed = true;
-      iterator.return?.();
+      iterator?.return?.();
     }
   }
 
@@ -164,7 +160,13 @@ export async function sendMessageStreaming(
   // The outer finally skips cleanup when true — background owns the iterator.
   let handedOffToBackground = false;
 
+  // Raw iterator protocol: we intentionally avoid for-await-of because it calls
+  // .return() on early exit, which would close the stream before the background
+  // IIFE can continue reading from the same iterator.
   try {
+    const stream = query({ prompt, options: options as any });
+    iterator = stream[Symbol.asyncIterator]();
+
     let done = false;
     while (!done) {
       const next = await nextWithTimeout(iterator, "foreground");
