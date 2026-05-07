@@ -44,10 +44,11 @@ function notificationHash(message: string, project?: string, driveUrl?: string):
 
 function isDuplicate(hash: string): boolean {
   const now = Date.now();
-  // Clean expired entries
-  for (const [key, ts] of recentNotifications) {
-    if (now - ts > DEDUP_WINDOW_MS) recentNotifications.delete(key);
-  }
+  // Clean expired entries — collect first to avoid mutating map during iteration
+  const staleKeys = [...recentNotifications.entries()]
+    .filter(([, ts]) => now - ts > DEDUP_WINDOW_MS)
+    .map(([key]) => key);
+  for (const key of staleKeys) recentNotifications.delete(key);
   if (recentNotifications.has(hash)) return true;
   recentNotifications.set(hash, now);
   return false;
@@ -147,9 +148,9 @@ async function processNotification(notification: Notification, cfg: Config): Pro
   parts.push(`Priority: ${notification.priority}`);
   parts.push(`Action: ${notification.action}`);
   if (notification.project) parts.push(`Project: ${notification.project}`);
-  if (notification.drive_url) parts.push(`Drive URL: ${notification.drive_url}`);
+  if (notification.drive_url) parts.push(`Drive URL: ${notification.drive_url.replace(/[\r\n]/g, "")}`);
   if (notification.artifacts?.length) {
-    parts.push(`Artifacts: ${notification.artifacts.join(", ")}`);
+    parts.push(`Artifacts: ${notification.artifacts.map(a => a.replace(/[\r\n]/g, "")).join(", ")}`);
   }
   parts.push("");
   parts.push(notification.message);
@@ -247,7 +248,11 @@ async function processNotification(notification: Notification, cfg: Config): Pro
     log("info", `[context-server] notification ${notification.id} processed`);
   } catch (err) {
     clearTimeout(timer);
-    log("error", `[context-server] notification ${notification.id} processing failed`, err);
+    if (ac.signal.aborted) {
+      log("warn", `[context-server] notification ${notification.id} timed out after ${NOTIFY_TIMEOUT_MS / 1000}s`);
+    } else {
+      log("error", `[context-server] notification ${notification.id} processing failed`, err);
+    }
   }
 }
 
@@ -319,10 +324,10 @@ export async function startContextServer(cfg: Config): Promise<ReturnType<typeof
           id: requestId,
           message,
           project: project || undefined,
-          drive_url: typeof body.drive_url === "string" ? body.drive_url : undefined,
+          drive_url: typeof body.drive_url === "string" && body.drive_url.startsWith("https://") ? body.drive_url : undefined,
           action: action as Notification["action"],
           priority: priority as Notification["priority"],
-          artifacts: Array.isArray(body.artifacts) ? body.artifacts.filter((a): a is string => typeof a === "string").slice(0, 50) : undefined,
+          artifacts: Array.isArray(body.artifacts) ? body.artifacts.filter((a): a is string => typeof a === "string").slice(0, 50).map(s => s.slice(0, 500)) : undefined,
           received_at: new Date().toISOString(),
         };
 

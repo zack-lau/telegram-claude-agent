@@ -113,7 +113,7 @@ async function sendFormattedResponse(ctx: Context, raw: string): Promise<void> {
   sendLocks.set(chatId, wrapped);
   // Register cleanup BEFORE awaiting so it fires even if current rejects.
   // (await current throws on reject, skipping any code after it.)
-  wrapped.finally(() => {
+  void wrapped.finally(() => {
     if (sendLocks.get(chatId) === wrapped) {
       sendLocks.delete(chatId);
     }
@@ -168,7 +168,9 @@ export async function handleStatus(ctx: Context): Promise<void> {
     factCount = await countRows("facts");
     goalCount = await countRows("goals");
     reflectionCount = await countRows("reflections");
-  } catch {}
+  } catch (e) {
+    log("warn", `handleStatus: LanceDB query failed for chat ${chatId}`, e);
+  }
 
   const status = [
     "system status",
@@ -196,7 +198,9 @@ export async function handleMemory(ctx: Context): Promise<void> {
   try {
     factCount = await countRows("facts");
     goalCount = await countRows("goals");
-  } catch {}
+  } catch (e) {
+    log("warn", `handleMemory: LanceDB query failed for chat ${chatId}`, e);
+  }
 
   await ctx.reply(
     `memory\n\nstored facts: ${factCount}\ngoals/decisions: ${goalCount}\n\nask me to search my memory for specific topics.`,

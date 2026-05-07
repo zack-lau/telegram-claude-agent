@@ -66,9 +66,10 @@ export async function sendMessageStreaming(
       if (!ALLOWED_MEDIA_TYPES.has(img.mediaType)) {
         throw new Error(`Unsupported image type: ${img.mediaType}`);
       }
-      // Exact base64 decode size: each 4-char group = 3 bytes, minus padding chars
-      const padding = (img.base64.match(/=+$/) ?? [""])[0].length;
-      const exactBytes = Math.floor(img.base64.length * 3 / 4) - padding;
+      // Exact base64 decode size: strip whitespace first (newlines in multiline b64)
+      const b64 = img.base64.replace(/\s/g, "");
+      const padding = (b64.match(/=+$/) ?? [""])[0].length;
+      const exactBytes = Math.floor(b64.length * 3 / 4) - padding;
       if (exactBytes > MAX_IMAGE_SIZE_BYTES) {
         throw new Error(`Image too large (${Math.round(exactBytes / 1024)}KB, max ${MAX_IMAGE_SIZE_BYTES / 1024}KB)`);
       }
@@ -303,7 +304,10 @@ export async function sendMessageStreaming(
     if (!handedOffToBackground) closeIterator();
   }
 
-  // Foreground path — persist session unless /new was called while we were running
+  // Foreground path — persist session unless /new was called while we were running.
+  // TOCTOU: generation check and setSessionId are not atomic, but handlers.ts
+  // serialises per-chat requests via chatQueues, so no concurrent foreground caller
+  // can advance the generation between these two lines.
   if (sessionId && getGeneration(chatId) === startGeneration) {
     setSessionId(chatId, sessionId);
   }
