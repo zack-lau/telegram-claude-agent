@@ -322,6 +322,14 @@ async function processQuery(
     ctx.replyWithChatAction("typing").catch(() => {});
   }, 3000);
 
+  // After 60 s with no text back, let the user know we're still alive
+  let firstTextReceived = false;
+  const stillWorkingTimer = setTimeout(() => {
+    if (!firstTextReceived) {
+      ctx.reply("still on it, this one's taking a bit longer than usual...").catch(() => {});
+    }
+  }, 60_000);
+
   try {
     let backgroundTaskId: string | null = null;
 
@@ -329,6 +337,8 @@ async function processQuery(
       chatId,
       text,
       async (responseText) => {
+        firstTextReceived = true;
+        clearTimeout(stillWorkingTimer);
         // Refresh typing right before the Telegram send — prevents the TTL expiring
         // mid-send when the response arrives close to the 5 s boundary.
         ctx.replyWithChatAction("typing").catch(() => {});
@@ -390,10 +400,17 @@ async function processQuery(
   } catch (err) {
     const isMaxTurns =
       err instanceof Error && err.message.includes("maximum number of turns");
+    const isStall =
+      err instanceof Error && err.message.startsWith("Stream stalled:");
     if (isMaxTurns) {
       log("warn", `Message handling failed for chat ${chatId}: max turns`);
       await ctx.reply(
         "hit the turn limit on that one — task was too complex for a single shot. try /new and break it into smaller steps.",
+      );
+    } else if (isStall) {
+      log("warn", `Message handling failed for chat ${chatId}: stream stall`, err);
+      await ctx.reply(
+        "api stopped responding mid-stream — probably a hiccup on anthropic's end. try sending that again.",
       );
     } else {
       log("error", `Message handling failed for chat ${chatId}`, err);
@@ -402,6 +419,7 @@ async function processQuery(
       );
     }
   } finally {
+    clearTimeout(stillWorkingTimer);
     clearInterval(typingInterval);
   }
 }

@@ -13,10 +13,11 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB per image
 const MAX_IMAGES = 5;
 const ALLOWED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 
-// Per-turn timeout: generous to allow slow tool calls, but prevents forever-hung network.
-// Note: when the timeout fires, the underlying SDK stream cannot be cancelled (no AbortSignal
-// support in the current SDK). The stream will drain in the background, but the bot moves on.
-const TURN_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+// Per-turn timeout: fires if the SDK yields no event for this long.
+// Each event (assistant turn, tool result, system message) normally arrives within seconds.
+// 3 minutes is generous for a single-event stall while keeping the user experience sane.
+// Note: when the timeout fires the underlying stream drains in background (no AbortSignal).
+const TURN_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
 
 async function nextWithTimeout<T>(
   iter: AsyncIterator<T>,
