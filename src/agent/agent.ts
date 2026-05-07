@@ -15,9 +15,9 @@ const ALLOWED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "im
 
 // Per-turn timeout: fires if the SDK yields no event for this long.
 // Each event (assistant turn, tool result, system message) normally arrives within seconds.
-// 3 minutes is generous for a single-event stall while keeping the user experience sane.
+// 5 minutes observed in practice: some tool calls and session resumes take 160s+ legitimately.
 // Note: when the timeout fires the underlying stream drains in background (no AbortSignal).
-const TURN_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
+const TURN_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 async function nextWithTimeout<T>(
   iter: AsyncIterator<T>,
