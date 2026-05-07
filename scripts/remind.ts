@@ -7,11 +7,12 @@
  *   bun run scripts/remind.ts list
  *   bun run scripts/remind.ts remove <id>
  */
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, renameSync, existsSync } from "fs";
 import { resolve } from "path";
 import { randomUUID } from "crypto";
 
 const REMINDERS_PATH = resolve("./data/reminders.json");
+const REMINDERS_TMP = REMINDERS_PATH + ".tmp";
 
 interface Reminder {
   id: string;
@@ -23,11 +24,17 @@ interface Reminder {
 
 function load(): Reminder[] {
   if (!existsSync(REMINDERS_PATH)) return [];
-  return JSON.parse(readFileSync(REMINDERS_PATH, "utf8")) as Reminder[];
+  try {
+    return JSON.parse(readFileSync(REMINDERS_PATH, "utf8")) as Reminder[];
+  } catch {
+    console.error("error: reminders.json is corrupted — cannot read");
+    process.exit(1);
+  }
 }
 
 function save(reminders: Reminder[]): void {
-  writeFileSync(REMINDERS_PATH, JSON.stringify(reminders, null, 2), "utf8");
+  writeFileSync(REMINDERS_TMP, JSON.stringify(reminders, null, 2), "utf8");
+  renameSync(REMINDERS_TMP, REMINDERS_PATH);
 }
 
 const [, , cmd, ...args] = process.argv;
@@ -37,13 +44,13 @@ if (cmd === "add") {
   const chatId = parseInt(chatIdStr ?? "", 10);
   const message = msgParts.join(" ");
 
-  if (!chatId || !fireAt || !message) {
+  if (!Number.isInteger(chatId) || chatId <= 0 || !fireAt || !message) {
     console.error("usage: remind.ts add <chatId> <ISO8601> <message>");
     process.exit(1);
   }
 
   const fireMs = new Date(fireAt).getTime();
-  if (isNaN(fireMs)) {
+  if (!Number.isFinite(fireMs)) {
     console.error(`invalid date: ${fireAt} — use ISO 8601 (e.g. 2026-05-07T15:00:00+08:00)`);
     process.exit(1);
   }
