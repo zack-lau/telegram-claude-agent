@@ -214,6 +214,9 @@ export async function handleMessage(ctx: Context): Promise<void> {
   const text = ctx.message?.text;
   if (!chatId || !text) return;
 
+  // Fire typing immediately — don't wait for the queue to drain first
+  ctx.replyWithChatAction("typing").catch(() => {});
+
   const queued = enqueue(chatId, async () => {
     await ctx.replyWithChatAction("typing").catch(() => {});
     await processQuery(ctx, chatId, text);
@@ -226,6 +229,8 @@ export async function handleMessage(ctx: Context): Promise<void> {
 export async function handleVoice(ctx: Context): Promise<void> {
   const chatId = ctx.chat?.id;
   if (!chatId) return;
+
+  ctx.replyWithChatAction("typing").catch(() => {});
 
   const queued = enqueue(chatId, async () => {
     await ctx.replyWithChatAction("typing").catch(() => {});
@@ -255,6 +260,8 @@ export async function handlePhoto(ctx: Context): Promise<void> {
   const chatId = ctx.chat?.id;
   if (!chatId) return;
 
+  ctx.replyWithChatAction("typing").catch(() => {});
+
   const queued = enqueue(chatId, async () => {
     await ctx.replyWithChatAction("typing").catch(() => {});
     try {
@@ -278,6 +285,8 @@ export async function handlePhoto(ctx: Context): Promise<void> {
 export async function handleDocument(ctx: Context): Promise<void> {
   const chatId = ctx.chat?.id;
   if (!chatId) return;
+
+  ctx.replyWithChatAction("typing").catch(() => {});
 
   const queued = enqueue(chatId, async () => {
     await ctx.replyWithChatAction("typing").catch(() => {});
@@ -308,11 +317,10 @@ async function processQuery(
   text: string,
   images?: ImageAttachment[],
 ): Promise<void> {
-  const typingInterval = setInterval(async () => {
-    try {
-      await ctx.replyWithChatAction("typing");
-    } catch {}
-  }, 4000);
+  // Non-blocking, 3 s interval — keeps typing TTL (5 s) alive with comfortable margin
+  const typingInterval = setInterval(() => {
+    ctx.replyWithChatAction("typing").catch(() => {});
+  }, 3000);
 
   try {
     let backgroundTaskId: string | null = null;
@@ -321,6 +329,9 @@ async function processQuery(
       chatId,
       text,
       async (responseText) => {
+        // Refresh typing right before the Telegram send — prevents the TTL expiring
+        // mid-send when the response arrives close to the 5 s boundary.
+        ctx.replyWithChatAction("typing").catch(() => {});
         await sendFormattedResponse(ctx, responseText);
       },
       (taskId) => {
@@ -335,9 +346,15 @@ async function processQuery(
       clearInterval(typingInterval);
       addBackgroundJob(chatId, backgroundTaskId, sessionId);
 
+      // Keep typing visible while the background agent runs.
+      const bgTypingInterval = setInterval(() => {
+        ctx.replyWithChatAction("typing").catch(() => {});
+      }, 3000);
+
       const taskId = backgroundTaskId;
       backgroundPromise
         .then(async (followUpMessages) => {
+          clearInterval(bgTypingInterval);
           try {
             if (!isJobRelevant(chatId, taskId)) {
               log("info", `Background job ${taskId} stale for chat ${chatId}, discarding`);
@@ -359,6 +376,7 @@ async function processQuery(
           }
         })
         .catch(async (err) => {
+          clearInterval(bgTypingInterval);
           log("error", `Background job ${taskId} failed for chat ${chatId}`, err);
           const stale = !isJobRelevant(chatId, taskId);
           removeBackgroundJob(chatId, taskId);
