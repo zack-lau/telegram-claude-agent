@@ -17,6 +17,16 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "state" {
   bucket = "aegis-terraform-state-${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Project   = "aegis"
+    ManagedBy = "terraform"
+    Component = "state-backend"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_s3_bucket_versioning" "state" {
@@ -41,6 +51,27 @@ resource "aws_s3_bucket_public_access_block" "state" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_policy" "state_tls" {
+  bucket = aws_s3_bucket.state.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "DenyNonTLS"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource = [
+        aws_s3_bucket.state.arn,
+        "${aws_s3_bucket.state.arn}/*",
+      ]
+      Condition = {
+        Bool = { "aws:SecureTransport" = "false" }
+      }
+    }]
+  })
+}
+
 resource "aws_dynamodb_table" "locks" {
   name         = "aegis-terraform-locks"
   billing_mode = "PAY_PER_REQUEST"
@@ -49,6 +80,12 @@ resource "aws_dynamodb_table" "locks" {
   attribute {
     name = "LockID"
     type = "S"
+  }
+
+  tags = {
+    Project   = "aegis"
+    ManagedBy = "terraform"
+    Component = "state-backend"
   }
 }
 
