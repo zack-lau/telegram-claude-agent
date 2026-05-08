@@ -37,14 +37,6 @@ resource "aws_ecs_task_definition" "api" {
       protocol      = "tcp"
     }]
 
-    healthCheck = {
-      command     = ["CMD-SHELL", "curl -sf http://localhost/ || exit 1"]
-      interval    = 30
-      timeout     = 5
-      retries     = 3
-      startPeriod = 10
-    }
-
     logConfiguration = {
       logDriver = "awslogs"
       options = {
