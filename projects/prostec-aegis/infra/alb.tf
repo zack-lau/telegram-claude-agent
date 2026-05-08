@@ -7,6 +7,12 @@ resource "aws_lb" "main" {
   drop_invalid_header_fields = true
   enable_deletion_protection = true
 
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.id
+    prefix  = "alb"
+    enabled = true
+  }
+
   tags = { Name = "${local.name_prefix}-alb" }
 }
 

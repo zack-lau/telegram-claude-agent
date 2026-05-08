@@ -120,6 +120,9 @@ resource "aws_dynamodb_table" "audit_logs" {
   tags = { Name = "${local.name_prefix}-audit-logs" }
 }
 
+# oauth_tokens uses the shared DynamoDB CMK for SSE. Individual token payloads are
+# further encrypted at the application layer using aws_kms_key.oauth_tokens via
+# kms:GenerateDataKey + kms:Decrypt in the ECS task role (two-layer encryption).
 resource "aws_dynamodb_table" "oauth_tokens" {
   name         = "${local.name_prefix}-oauth-tokens"
   billing_mode = "PAY_PER_REQUEST"

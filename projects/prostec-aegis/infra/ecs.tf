@@ -26,7 +26,10 @@ resource "aws_ecs_task_definition" "api" {
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn            = aws_iam_role.ecs_task.arn
 
-  # PLACEHOLDER: replace image with Aegis API image when built
+  # PLACEHOLDER: replace with Aegis API image when built.
+  # TODO on real image: readonlyRootFilesystem=true, user="1000:1000",
+  #   linuxParameters.capabilities.drop=["ALL"], privileged=false,
+  #   proper healthCheck (CMD /health), pin image to digest.
   container_definitions = jsonencode([{
     name      = "api"
     image     = "public.ecr.aws/nginx/nginx:latest"
@@ -50,6 +53,13 @@ resource "aws_ecs_task_definition" "api" {
       { name = "APP_ENV", value = var.environment },
       { name = "LOG_LEVEL", value = "info" },
     ]
+
+    # ECS injects this from Secrets Manager at task startup via the execution role.
+    # Value is a JSON blob; Aegis API parses it on boot.
+    # If this secret is moved to a CMK, add kms:Decrypt on that key to ecs_execution role.
+    secrets = [
+      { name = "APP_CONFIG_JSON", valueFrom = aws_secretsmanager_secret.app_config.arn }
+    ]
   }])
 }
 
@@ -57,9 +67,15 @@ resource "aws_ecs_service" "api" {
   name                              = "${local.name_prefix}-api"
   cluster                           = aws_ecs_cluster.main.id
   task_definition                   = aws_ecs_task_definition.api.arn
-  desired_count                     = 1
+  desired_count                     = 2
   launch_type                       = "FARGATE"
+  platform_version                  = "LATEST"
   health_check_grace_period_seconds = 30
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   network_configuration {
     subnets          = aws_subnet.private[*].id
@@ -75,6 +91,7 @@ resource "aws_ecs_service" "api" {
 
   depends_on = [aws_lb_listener.https]
 
+  # task_definition is managed by CI/CD; Terraform manages service config only.
   lifecycle {
     ignore_changes = [task_definition]
   }

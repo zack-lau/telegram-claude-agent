@@ -71,24 +71,39 @@ resource "aws_iam_role_policy" "ecs_task_dynamodb" {
   })
 }
 
-# audit_logs is append-only — TTL handles expiry, no Update/Delete from the task role
+# audit_logs is append-only — TTL handles expiry, no Update/Delete from the task role.
+# Explicit Deny overrides any future accidental Allow attached to this role.
 resource "aws_iam_role_policy" "ecs_task_audit_logs" {
   name = "audit-logs-append-only"
   role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "dynamodb:PutItem",
-        "dynamodb:Query",
-      ]
-      Resource = [
-        aws_dynamodb_table.audit_logs.arn,
-        "${aws_dynamodb_table.audit_logs.arn}/index/*",
-      ]
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:Query",
+        ]
+        Resource = [
+          aws_dynamodb_table.audit_logs.arn,
+          "${aws_dynamodb_table.audit_logs.arn}/index/*",
+        ]
+      },
+      {
+        Effect = "Deny"
+        Action = [
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:BatchWriteItem",
+        ]
+        Resource = [
+          aws_dynamodb_table.audit_logs.arn,
+          "${aws_dynamodb_table.audit_logs.arn}/index/*",
+        ]
+      }
+    ]
   })
 }
 
