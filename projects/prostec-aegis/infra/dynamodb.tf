@@ -15,6 +15,8 @@ resource "aws_dynamodb_table" "key_directory" {
 
   point_in_time_recovery { enabled = true }
 
+  deletion_protection_enabled = true
+
   tags = { Name = "${local.name_prefix}-key-directory" }
 }
 
@@ -46,6 +48,8 @@ resource "aws_dynamodb_table" "api_keys" {
 
   point_in_time_recovery { enabled = true }
 
+  deletion_protection_enabled = true
+
   tags = { Name = "${local.name_prefix}-api-keys" }
 }
 
@@ -65,6 +69,8 @@ resource "aws_dynamodb_table" "revocations" {
   }
 
   point_in_time_recovery { enabled = true }
+
+  deletion_protection_enabled = true
 
   tags = { Name = "${local.name_prefix}-revocations" }
 }
@@ -109,6 +115,8 @@ resource "aws_dynamodb_table" "audit_logs" {
 
   point_in_time_recovery { enabled = true }
 
+  deletion_protection_enabled = true
+
   tags = { Name = "${local.name_prefix}-audit-logs" }
 }
 
@@ -128,6 +136,8 @@ resource "aws_dynamodb_table" "oauth_tokens" {
   }
 
   point_in_time_recovery { enabled = true }
+
+  deletion_protection_enabled = true
 
   tags = { Name = "${local.name_prefix}-oauth-tokens" }
 }
