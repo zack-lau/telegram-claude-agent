@@ -6,6 +6,9 @@ resource "aws_wafv2_web_acl" "main" {
     allow {}
   }
 
+  # Rate limit: 300 requests per IP per 5-minute rolling window (~1 req/sec average).
+  # Intentionally conservative for an encrypted document delivery API.
+  # Adjust upward if legitimate agents are being blocked.
   rule {
     name     = "ip-rate-limit"
     priority = 1
@@ -40,6 +43,7 @@ resource "aws_wafv2_web_acl" "main" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
+        version     = "Version_1.12"
       }
     }
 
@@ -62,6 +66,7 @@ resource "aws_wafv2_web_acl" "main" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesKnownBadInputsRuleSet"
         vendor_name = "AWS"
+        version     = "Version_1.5"
       }
     }
 

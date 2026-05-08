@@ -1,11 +1,11 @@
 resource "aws_lb" "main" {
-  name               = "${local.name_prefix}-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = aws_subnet.public[*].id
-
+  name                       = "${local.name_prefix}-alb"
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.alb.id]
+  subnets                    = aws_subnet.public[*].id
   drop_invalid_header_fields = true
+  enable_deletion_protection = true
 
   tags = { Name = "${local.name_prefix}-alb" }
 }
@@ -18,7 +18,8 @@ resource "aws_lb_target_group" "api" {
   target_type = "ip"
 
   health_check {
-    path                = "/health"
+    # Placeholder: nginx serves 200 on /. Change to /health when Aegis API image is deployed.
+    path                = "/"
     healthy_threshold   = 2
     unhealthy_threshold = 3
     interval            = 30

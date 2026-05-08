@@ -35,3 +35,9 @@ variable "route53_zone_id" {
   description = "Route53 hosted zone ID for prosteclabs.com"
   type        = string
 }
+
+variable "alarm_sns_arn" {
+  description = "SNS topic ARN for CloudWatch alarm notifications (leave empty to disable)"
+  type        = string
+  default     = ""
+}

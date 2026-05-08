@@ -14,6 +14,8 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   threshold           = 10
   alarm_description   = "ALB 5xx responses > 10 in 1 minute"
   treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_sns_arn != "" ? [var.alarm_sns_arn] : []
+  ok_actions          = var.alarm_sns_arn != "" ? [var.alarm_sns_arn] : []
 
   dimensions = {
     LoadBalancer = aws_lb.main.arn_suffix
@@ -31,6 +33,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_running_tasks" {
   threshold           = 1
   alarm_description   = "ECS service has 0 running tasks"
   treat_missing_data  = "breaching"
+  alarm_actions       = var.alarm_sns_arn != "" ? [var.alarm_sns_arn] : []
 
   dimensions = {
     ClusterName = aws_ecs_cluster.main.name
