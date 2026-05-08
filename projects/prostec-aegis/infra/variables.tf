@@ -1,13 +1,22 @@
 variable "aws_region" {
-  description = "AWS region"
+  description = "AWS region (default: ap-southeast-1, Singapore)"
   type        = string
   default     = "ap-southeast-1"
+
+  validation {
+    condition     = can(regex("^[a-z]{2}-[a-z]+-[0-9]$", var.aws_region))
+    error_message = "aws_region must be a valid AWS region (e.g. ap-southeast-1)"
+  }
 }
 
 variable "environment" {
-  description = "Deployment environment"
+  description = "Deployment environment (e.g. staging, production)"
   type        = string
-  default     = "production"
+
+  validation {
+    condition     = contains(["staging", "production"], var.environment)
+    error_message = "environment must be one of: staging, production"
+  }
 }
 
 variable "project" {
