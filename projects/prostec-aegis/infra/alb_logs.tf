@@ -1,6 +1,6 @@
 # ALB access logs — per-request forensics for incident response.
-# ELB service account for ap-southeast-1 = 114774131450 (AWS-managed, region-specific).
-# See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/enable-access-logging.html
+# aws_elb_service_account resolves the region-specific ELB log delivery account automatically.
+data "aws_elb_service_account" "main" {}
 
 resource "aws_s3_bucket" "alb_logs" {
   bucket        = "${local.name_prefix}-alb-logs-${data.aws_caller_identity.current.account_id}"
@@ -63,7 +63,7 @@ resource "aws_s3_bucket_policy" "alb_logs" {
       {
         Sid       = "ELBAccessLogs"
         Effect    = "Allow"
-        Principal = { AWS = "arn:aws:iam::114774131450:root" }
+        Principal = { AWS = data.aws_elb_service_account.main.arn }
         Action    = "s3:PutObject"
         Resource  = "${aws_s3_bucket.alb_logs.arn}/alb/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
       },
