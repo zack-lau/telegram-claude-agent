@@ -1,15 +1,21 @@
-// DeliveryEnvelope: wire format per ADR 0002 §D3.
+// DeliveryEnvelope: wire format per ADR 0003 §D7.
 //
 // K_content is a fresh 32-byte random key per delivery.
 // Body AEAD uses K_content. Per-recipient slots wrap K_content via the hybrid KEM.
 // AAD on the body binds: version, suite_id, content_id, sender info, recipient set.
 
+use aes::Aes256;
 use aes_gcm::{
     aead::{Aead, AeadCore, KeyInit, OsRng},
     Aes256Gcm, Key, Nonce,
 };
+use aes_kw::Kek;
 use anyhow::{bail, Result};
 use hkdf::Hkdf;
+use p256::ecdsa::{
+    Signature as EcdsaSignature, SigningKey as EcdsaSigningKey, VerifyingKey as EcdsaVerifyingKey,
+};
+use p256::ecdsa::signature::{Signer, Verifier};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha384};
@@ -19,8 +25,8 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 use super::kem::{decapsulate, encapsulate, RecipientPublicKey, RecipientSecretKey, ENCAP_LEN};
 
 pub const SUITE_MLKEM768_P256_HKDFSHA384_AES256GCM: u16 = 0x0040;
-/// [12B nonce][32B K_content ciphertext][16B AEAD tag] = 60B
-pub const WRAPPED_KEY_LEN: usize = 12 + 32 + 16;
+/// [8B ICV][32B K_content wrapped] = 40B (AES-256-KWP, RFC 5649 / NIST SP 800-38F)
+pub const WRAPPED_KEY_LEN: usize = 8 + 32;
 
 /// Distinct HKDF label for the key-wrapping key derivation.
 /// Separates this usage from the KEM shared-secret domain.
@@ -34,7 +40,7 @@ pub struct RecipientSlot {
     pub recipient_key_id: Uuid,
     /// HPKE encapsulation output: ML-KEM-768 ct (1088 B) + P-256 eph pk (33 B) = 1121 B.
     pub encap: Vec<u8>,
-    /// AES-256-GCM wrapped K_content: [12B nonce][32B ct][16B tag] = 60 B.
+    /// AES-256-KWP wrapped K_content: [8B ICV][32B wrapped] = 40 B (RFC 5649).
     pub wrapped_key: Vec<u8>,
 }
 
@@ -64,6 +70,9 @@ pub struct EnvelopeHeader {
     pub burn_after_read: bool,
     /// Cap at 64 recipients to bound deserialization work.
     pub recipients: Vec<RecipientSlot>,
+    /// ECDSA-P256 signature over aad() bytes — 64 bytes (r||s). Sender auth,
+    /// KCI-resistant (forgery requires sender private key, not recipient key).
+    pub sender_signature: Vec<u8>,
 }
 
 impl EnvelopeHeader {
@@ -76,6 +85,9 @@ impl EnvelopeHeader {
         }
         for slot in &self.recipients {
             slot.validate()?;
+        }
+        if self.sender_signature.len() != 64 {
+            bail!("sender_signature must be 64 bytes, got {}", self.sender_signature.len());
         }
         Ok(())
     }
@@ -91,6 +103,20 @@ pub struct EnvelopeBody {
 /// Content encryption key — in memory only, never persisted.
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub struct ContentKey([u8; 32]);
+
+/// ECDSA-P256 signing key for sender authentication (KCI-resistant).
+pub struct SenderSigningKey(pub EcdsaSigningKey);
+
+/// ECDSA-P256 verifying key for sender authentication.
+pub struct SenderVerifyingKey(pub EcdsaVerifyingKey);
+
+/// Generate a fresh P-256 ECDSA sender keypair.
+pub fn generate_sender_keypair() -> (SenderVerifyingKey, SenderSigningKey) {
+    let p256_sk = p256::SecretKey::random(&mut OsRng);
+    let sk = EcdsaSigningKey::from(&p256_sk);
+    let vk = sk.verifying_key().clone();
+    (SenderVerifyingKey(vk), SenderSigningKey(sk))
+}
 
 impl EnvelopeHeader {
     /// Canonical byte representation used as AAD on the body AEAD.
@@ -121,6 +147,7 @@ pub fn seal(
     plaintext: &[u8],
     sender_id: Uuid,
     sender_key_id: Uuid,
+    sender_sk: &SenderSigningKey,
     expires_at_ms: u64,
     burn_after_read: bool,
     recipients: &[(Uuid, Uuid, &RecipientPublicKey)], // (recipient_id, key_id, pk)
@@ -150,7 +177,7 @@ pub fn seal(
         });
     }
 
-    let header = EnvelopeHeader {
+    let mut header = EnvelopeHeader {
         version: 1,
         suite_id: SUITE_MLKEM768_P256_HKDFSHA384_AES256GCM,
         content_id,
@@ -160,10 +187,17 @@ pub fn seal(
         expires_at_ms,
         burn_after_read,
         recipients: slots,
+        sender_signature: Vec::new(), // filled below
     };
 
-    // Encrypt body with K_content; AAD = canonical header hash
-    let body = encrypt_body(plaintext, &k_content, &header.aad())?;
+    // AAD binds all header fields except sender_signature (can't sign yourself).
+    let aad = header.aad();
+
+    // Sign over AAD with sender's ECDSA-P256 key — KCI-resistant sender auth.
+    let sig: EcdsaSignature = sender_sk.0.sign(&aad);
+    header.sender_signature = sig.to_bytes().to_vec();
+
+    let body = encrypt_body(plaintext, &k_content, &aad)?;
 
     Ok((header, body))
 }
@@ -175,7 +209,15 @@ pub fn open(
     recipient_id: Uuid,
     sk: &RecipientSecretKey,
     pk: &RecipientPublicKey,
+    sender_vk: &SenderVerifyingKey,
 ) -> Result<Vec<u8>> {
+    // Verify sender signature before any decryption work.
+    let aad = header.aad();
+    let sig = EcdsaSignature::from_slice(&header.sender_signature)
+        .map_err(|_| anyhow::anyhow!("invalid sender signature format"))?;
+    sender_vk.0.verify(&aad, &sig)
+        .map_err(|_| anyhow::anyhow!("sender signature verification failed"))?;
+
     let slot = header
         .recipients
         .iter()
@@ -189,7 +231,7 @@ pub fn open(
     let k_content_bytes = unwrap_key(&slot.wrapped_key, &ss.0)?;
     let k_content = ContentKey(k_content_bytes);
 
-    decrypt_body(body, &k_content, &header.aad())
+    decrypt_body(body, &k_content, &aad)
 }
 
 /// Derive a 32-byte wrapping key from the KEM shared secret with domain separation.
@@ -202,37 +244,31 @@ fn derive_wrap_key(ss: &[u8; 48]) -> [u8; 32] {
     okm
 }
 
-/// Wrap K_content under a domain-separated key derived from the KEM shared secret.
-/// Wire format: [12B nonce][32B K_content ciphertext][16B AEAD tag] = 60 B.
+/// Wrap K_content using AES-256-KWP (RFC 5649, NIST SP 800-38F §6.3).
+/// Wire format: [8B ICV][32B K_content wrapped] = 40 B. Deterministic — no nonce.
 fn wrap_key(k_content: &[u8; 32], ss: &[u8; 48]) -> Result<Vec<u8>> {
     let mut wrap_key_bytes = derive_wrap_key(ss);
-    let wrap_key = Key::<Aes256Gcm>::from_slice(&wrap_key_bytes);
-    let cipher = Aes256Gcm::new(wrap_key);
-    let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-    let mut ct = cipher
-        .encrypt(&nonce, k_content.as_ref())
-        .map_err(|_| anyhow::anyhow!("key wrap encryption failed"))?;
+    let kek = Kek::<Aes256>::try_from(wrap_key_bytes.as_ref())
+        .expect("32-byte key is valid for AES-256-KWP");
+    let wrapped = kek.wrap_with_padding_vec(k_content.as_ref())
+        .map_err(|_| anyhow::anyhow!("key wrap failed"))?;
     wrap_key_bytes.zeroize();
-    let mut out = nonce.to_vec();
-    out.append(&mut ct);
-    debug_assert_eq!(out.len(), WRAPPED_KEY_LEN);
-    Ok(out)
+    debug_assert_eq!(wrapped.len(), WRAPPED_KEY_LEN);
+    Ok(wrapped)
 }
 
 fn unwrap_key(wrapped: &[u8], ss: &[u8; 48]) -> Result<[u8; 32]> {
     if wrapped.len() != WRAPPED_KEY_LEN {
         bail!("wrapped_key must be {} bytes, got {}", WRAPPED_KEY_LEN, wrapped.len());
     }
-    let (nonce_bytes, ct) = wrapped.split_at(12);
     let mut wrap_key_bytes = derive_wrap_key(ss);
-    let wrap_key = Key::<Aes256Gcm>::from_slice(&wrap_key_bytes);
-    let cipher = Aes256Gcm::new(wrap_key);
-    let nonce = Nonce::from_slice(nonce_bytes);
-    let plaintext = cipher
-        .decrypt(nonce, ct)
-        .map_err(|_| anyhow::anyhow!("key unwrap failed — wrong key or tampered ciphertext"))?;
+    let kek = Kek::<Aes256>::try_from(wrap_key_bytes.as_ref())
+        .expect("32-byte key is valid for AES-256-KWP");
+    let plaintext = kek.unwrap_with_padding_vec(wrapped)
+        .map_err(|_| anyhow::anyhow!("key unwrap failed — wrong key or tampered data"))?;
     wrap_key_bytes.zeroize();
-    plaintext.as_slice().try_into().map_err(|_| anyhow::anyhow!("unwrapped key wrong length"))
+    plaintext.as_slice().try_into()
+        .map_err(|_| anyhow::anyhow!("unwrapped key wrong length"))
 }
 
 fn encrypt_body(
@@ -273,6 +309,7 @@ mod tests {
     #[test]
     fn seal_open_roundtrip() {
         let (pk, sk) = generate_keypair();
+        let (sender_vk, sender_sk) = generate_sender_keypair();
         let recipient_id = Uuid::new_v4();
         let key_id = Uuid::new_v4();
         let sender_id = Uuid::new_v4();
@@ -284,13 +321,15 @@ mod tests {
             plaintext,
             sender_id,
             sender_key_id,
+            &sender_sk,
             expires,
             false,
             &[(recipient_id, key_id, &pk)],
         )
         .unwrap();
 
-        let decrypted = open(&header, &body, recipient_id, &sk, &pk).unwrap();
+        assert_eq!(header.sender_signature.len(), 64);
+        let decrypted = open(&header, &body, recipient_id, &sk, &pk, &sender_vk).unwrap();
         assert_eq!(decrypted, plaintext);
     }
 
@@ -298,6 +337,7 @@ mod tests {
     fn wrong_recipient_cannot_open() {
         let (pk1, sk1) = generate_keypair();
         let (pk2, _sk2) = generate_keypair();
+        let (sender_vk, sender_sk) = generate_sender_keypair();
         let rid1 = Uuid::new_v4();
         let rid2 = Uuid::new_v4();
         let sender_id = Uuid::new_v4();
@@ -308,20 +348,21 @@ mod tests {
             b"secret",
             sender_id,
             sender_key_id,
+            &sender_sk,
             expires,
             false,
             &[(rid1, Uuid::new_v4(), &pk1)],
         )
         .unwrap();
 
-        // rid2 is not in the envelope
-        let result = open(&header, &body, rid2, &sk1, &pk2);
+        let result = open(&header, &body, rid2, &sk1, &pk2, &sender_vk);
         assert!(result.is_err());
     }
 
     #[test]
     fn tampered_body_fails_aad() {
         let (pk, sk) = generate_keypair();
+        let (sender_vk, sender_sk) = generate_sender_keypair();
         let recipient_id = Uuid::new_v4();
         let sender_id = Uuid::new_v4();
         let sender_key_id = Uuid::new_v4();
@@ -331,14 +372,65 @@ mod tests {
             b"tamper me",
             sender_id,
             sender_key_id,
+            &sender_sk,
             expires,
             false,
             &[(recipient_id, Uuid::new_v4(), &pk)],
         )
         .unwrap();
 
-        body.ciphertext[0] ^= 0xff; // flip a byte
-        let result = open(&header, &body, recipient_id, &sk, &pk);
+        body.ciphertext[0] ^= 0xff;
+        let result = open(&header, &body, recipient_id, &sk, &pk, &sender_vk);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn tampered_signature_rejected() {
+        let (pk, sk) = generate_keypair();
+        let (sender_vk, sender_sk) = generate_sender_keypair();
+        let recipient_id = Uuid::new_v4();
+        let sender_id = Uuid::new_v4();
+        let sender_key_id = Uuid::new_v4();
+        let expires = chrono::Utc::now().timestamp_millis() as u64 + 86_400_000;
+
+        let (mut header, body) = seal(
+            b"sign me",
+            sender_id,
+            sender_key_id,
+            &sender_sk,
+            expires,
+            false,
+            &[(recipient_id, Uuid::new_v4(), &pk)],
+        )
+        .unwrap();
+
+        header.sender_signature[0] ^= 0xff;
+        let result = open(&header, &body, recipient_id, &sk, &pk, &sender_vk);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn wrong_sender_key_rejected() {
+        let (pk, sk) = generate_keypair();
+        let (_sender_vk, sender_sk) = generate_sender_keypair();
+        let (wrong_vk, _) = generate_sender_keypair();
+        let recipient_id = Uuid::new_v4();
+        let sender_id = Uuid::new_v4();
+        let sender_key_id = Uuid::new_v4();
+        let expires = chrono::Utc::now().timestamp_millis() as u64 + 86_400_000;
+
+        let (header, body) = seal(
+            b"who sent this?",
+            sender_id,
+            sender_key_id,
+            &sender_sk,
+            expires,
+            false,
+            &[(recipient_id, Uuid::new_v4(), &pk)],
+        )
+        .unwrap();
+
+        let result = open(&header, &body, recipient_id, &sk, &pk, &wrong_vk);
         assert!(result.is_err());
     }
 }

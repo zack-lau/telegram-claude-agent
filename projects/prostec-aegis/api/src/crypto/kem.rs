@@ -1,9 +1,10 @@
-// MLKEM768_P256 hybrid KEM combiner per ADR 0002 / draft-ietf-hpke-pq.
+// MLKEM768_P256 hybrid KEM combiner per ADR 0003 / NIST SP 800-56C Rev.2.
 //
-// Security invariant: both ss_pq and ss_ec are bound into the combined
-// secret through their ciphertexts AND public keys via the HKDF info field.
-// This is the X-Wing IND-CCA construction — omitting the ct/pk terms
-// makes the combiner insecure if one component KEM breaks.
+// Dual-PRF cascade: ss_ec and ss_pq are each extracted separately, then
+// combined via HKDF-Extract(salt=PRK_ec, ikm=ss_pq). Transcript binding
+// (ciphertext + public keys) in the Expand info ensures IND-CCA2 security.
+// FIPS-approvable: P-256 ECDH satisfies the "at least one approved KEM" rule
+// from SP 800-56C Rev.2.
 
 use anyhow::{bail, Result};
 use hkdf::Hkdf;
@@ -115,8 +116,7 @@ pub fn decapsulate(
     )
 }
 
-/// HKDF-SHA384 combiner. The `info` field binds both ciphertexts and both
-/// public keys — required for IND-CCA security under component break.
+/// SP 800-56C Rev.2 dual-PRF cascade combiner with transcript binding.
 fn combine_secrets(
     ss_pq: &[u8],
     ss_ec: &[u8],
@@ -124,22 +124,32 @@ fn combine_secrets(
     pk_eph: &[u8],
     pk_ec_recipient: &[u8],
 ) -> Result<SharedSecret> {
-    let ikm: Vec<u8> = [ss_pq, ss_ec].concat();
+    // SHA-384 output length is 48 bytes; use as zero salt per SP 800-56C Rev.2.
+    let zero_salt = [0u8; 48];
 
-    // info = label || ct_pq || pk_eph || pk_ec_recipient
-    // All terms are length-prefixed (u16 big-endian) to prevent concatenation
-    // ambiguity between variable-length inputs.
-    let label = b"HPKE-v1 KEM MLKEM768_P256 shared_secret";
-    let mut info = Vec::with_capacity(label.len() + 2 + ct_pq.len() + 2 + pk_eph.len() + 2 + pk_ec_recipient.len());
+    // PRK_ec = HKDF-Extract(salt=zeros[48], ikm=SS_ECDH_P256)
+    let (prk_ec, _) = Hkdf::<Sha384>::extract(Some(&zero_salt), ss_ec);
+
+    // PRK_combined = HKDF-Extract(salt=PRK_ec, ikm=SS_ML-KEM-768)
+    let (prk_combined, _) = Hkdf::<Sha384>::extract(Some(prk_ec.as_slice()), ss_pq);
+
+    // Transcript info: label + length-prefixed ciphertext and public keys.
+    // Length-prefixing prevents concatenation ambiguity between variable-length inputs.
+    let label = b"aegis-v1 kem combiner";
+    let mut info = Vec::with_capacity(
+        label.len() + 2 + ct_pq.len() + 2 + pk_eph.len() + 2 + pk_ec_recipient.len(),
+    );
     info.extend_from_slice(label);
     push_lv(&mut info, ct_pq);
     push_lv(&mut info, pk_eph);
     push_lv(&mut info, pk_ec_recipient);
 
-    let hk = Hkdf::<Sha384>::new(None, &ikm);
+    // SS_combined = HKDF-Expand(PRK_combined, info=transcript, L=48)
+    let hk = Hkdf::<Sha384>::from_prk(prk_combined.as_slice())
+        .expect("prk_combined is valid SHA-384 output length");
     let mut okm = [0u8; 48];
     hk.expand(&info, &mut okm)
-        .map_err(|_| anyhow::anyhow!("hkdf expand failed"))?;
+        .expect("48 bytes is a valid output length for HKDF-SHA384");
 
     Ok(SharedSecret(okm))
 }
