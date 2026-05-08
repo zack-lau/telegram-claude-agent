@@ -40,6 +40,8 @@ impl<'a> DeliveryStore<'a> {
         // Parse envelope to check recipient membership
         let header: crate::crypto::envelope::EnvelopeHeader = serde_json::from_str(envelope_header_str)
             .map_err(|_| anyhow::anyhow!("malformed envelope header in storage"))?;
+        header.validate()
+            .map_err(|e| anyhow::anyhow!("invalid envelope header from storage: {}", e))?;
 
         if !header.recipients.iter().any(|s| s.recipient_id == recipient_id) {
             return Ok(None); // Treat as not found — don't reveal existence
