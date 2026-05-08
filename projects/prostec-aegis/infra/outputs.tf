@@ -34,7 +34,34 @@ output "kms_key_arns" {
   value = {
     oauth_tokens = aws_kms_key.oauth_tokens.arn
     dynamodb     = aws_kms_key.dynamodb.arn
+    logs         = aws_kms_key.logs.arn
   }
+}
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = aws_cognito_user_pool.main.id
+}
+
+output "cognito_user_pool_arn" {
+  description = "Cognito User Pool ARN"
+  value       = aws_cognito_user_pool.main.arn
+}
+
+output "cognito_client_id" {
+  description = "Cognito app client ID (server-side API client)"
+  value       = aws_cognito_user_pool_client.api.id
+  sensitive   = true
+}
+
+output "cognito_jwks_uri" {
+  description = "Cognito JWKS URI for stateless JWT verification in the API"
+  value       = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}/.well-known/jwks.json"
+}
+
+output "cognito_issuer_url" {
+  description = "Cognito token issuer URL"
+  value       = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}"
 }
 
 output "vpc_id" {

@@ -120,3 +120,25 @@ resource "aws_iam_role_policy" "ecs_task_kms_oauth" {
     }]
   })
 }
+
+# Cognito admin ops — needed for:
+#   AdminGetUser: verify recipient exists before delivering
+#   AdminUserGlobalSignOut: wipe all Cognito sessions on account compromise
+#   AdminDisableUser: suspend compromised accounts
+resource "aws_iam_role_policy" "ecs_task_cognito" {
+  name = "cognito-admin"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "cognito-idp:AdminGetUser",
+        "cognito-idp:AdminUserGlobalSignOut",
+        "cognito-idp:AdminDisableUser",
+      ]
+      Resource = [aws_cognito_user_pool.main.arn]
+    }]
+  })
+}
