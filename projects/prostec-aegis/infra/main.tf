@@ -9,7 +9,8 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "aegis-terraform-state-ACCOUNT_ID"
+    # bucket is passed at init time — never hardcode account IDs in source:
+    #   terraform init -backend-config="bucket=aegis-terraform-state-$(aws sts get-caller-identity --query Account --output text)"
     key            = "production/terraform.tfstate"
     region         = "ap-southeast-1"
     dynamodb_table = "aegis-terraform-locks"

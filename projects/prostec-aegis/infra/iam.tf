@@ -65,9 +65,28 @@ resource "aws_iam_role_policy" "ecs_task_dynamodb" {
         aws_dynamodb_table.api_keys.arn,
         "${aws_dynamodb_table.api_keys.arn}/index/*",
         aws_dynamodb_table.revocations.arn,
+        aws_dynamodb_table.oauth_tokens.arn,
+      ]
+    }]
+  })
+}
+
+# audit_logs is append-only — TTL handles expiry, no Update/Delete from the task role
+resource "aws_iam_role_policy" "ecs_task_audit_logs" {
+  name = "audit-logs-append-only"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+      ]
+      Resource = [
         aws_dynamodb_table.audit_logs.arn,
         "${aws_dynamodb_table.audit_logs.arn}/index/*",
-        aws_dynamodb_table.oauth_tokens.arn,
       ]
     }]
   })

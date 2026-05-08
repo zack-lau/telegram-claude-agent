@@ -44,6 +44,15 @@ resource "aws_wafv2_web_acl" "main" {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
         version     = "Version_1.12"
+
+        # Count (don't block) oversized bodies — Aegis clients POST encrypted document
+        # payloads that legitimately exceed CRS's 8KB default block threshold.
+        rule_action_override {
+          name = "SizeRestrictions_BODY"
+          action_to_use {
+            count {}
+          }
+        }
       }
     }
 
