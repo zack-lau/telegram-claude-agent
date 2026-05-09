@@ -32,6 +32,7 @@ pub async fn get_key_bundle(
         recipient_id,
         kem_pk_b64: record.kem_pk_b64,
         ec_pk_b64: record.ec_pk_b64,
+        ecdsa_pk_b64: record.ecdsa_pk_b64,
         version: record.key_version,
         expires_at: record.expires_at,
         signature_b64: record.signature_b64,
@@ -60,6 +61,13 @@ pub async fn register_key_bundle(
     if ec_pk_bytes.len() != 33 {
         return Err(ApiError::BadRequest(format!("ec_pk must be 33 bytes (SEC1 compressed), got {}", ec_pk_bytes.len())));
     }
+    if let Some(ref ecdsa_b64) = req.ecdsa_pk_b64 {
+        let ecdsa_bytes = URL_SAFE_NO_PAD.decode(ecdsa_b64)
+            .map_err(|_| ApiError::BadRequest("invalid ecdsa_pk base64".to_owned()))?;
+        if ecdsa_bytes.len() != 65 {
+            return Err(ApiError::BadRequest(format!("ecdsa_pk must be 65 bytes (SEC1 uncompressed), got {}", ecdsa_bytes.len())));
+        }
+    }
 
     // TODO: verify OPAQUE registration state before accepting key bundle.
     // For now, accept the bundle and sign it.
@@ -79,6 +87,7 @@ pub async fn register_key_bundle(
         recipient_id: user.recipient_id,
         kem_pk_b64: req.kem_pk_b64.clone(),
         ec_pk_b64: req.ec_pk_b64.clone(),
+        ecdsa_pk_b64: req.ecdsa_pk_b64.clone(),
         key_version: version,
         expires_at,
         signature_b64: signature_b64.clone(),
@@ -96,6 +105,7 @@ pub async fn register_key_bundle(
             recipient_id: user.recipient_id,
             kem_pk_b64: req.kem_pk_b64,
             ec_pk_b64: req.ec_pk_b64,
+            ecdsa_pk_b64: req.ecdsa_pk_b64,
             version,
             expires_at,
             signature_b64,

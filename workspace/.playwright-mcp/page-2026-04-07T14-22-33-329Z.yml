@@ -1,0 +1,29 @@
+- generic [ref=e156]:
+  - generic [ref=e157]:
+    - img [ref=e160]
+    - heading "Sign in to Codex with ChatGPT" [level=1] [ref=e162]:
+      - generic [ref=e163]: Sign in to Codex with ChatGPT
+  - group [ref=e164]:
+    - form "Sign in to Codex with ChatGPT" [ref=e165]:
+      - generic [ref=e166]:
+        - generic [ref=e167]:
+          - img [ref=e168]
+          - generic [ref=e170]: zack@lzac.cc
+        - generic [ref=e171]:
+          - paragraph [ref=e172]: By continuing, ChatGPT will share your name, email, and profile picture with Codex to link your account.
+          - paragraph [ref=e173]: Codex will not receive your chat history.
+          - paragraph [ref=e174]: "When you use Codex:"
+          - list [ref=e175]:
+            - listitem [ref=e176]: It’s powered by your ChatGPT account and uses your plan’s rate limits and training and language preferences.
+            - listitem [ref=e177]: The ChatGPT Terms of Use and Privacy Policy—or the corresponding service terms for ChatGPT Enterprise, Education or Business Users—apply to data shared with ChatGPT.
+          - paragraph [ref=e178]: Codex makes mistakes. Review the code it writes and the commands it runs.
+      - generic [ref=e181]:
+        - link "Cancel" [ref=e183] [cursor=pointer]:
+          - /url: https://chatgpt.com
+        - button "Continue" [ref=e185] [cursor=pointer]
+  - generic [ref=e187]:
+    - link "Terms of Use" [ref=e188] [cursor=pointer]:
+      - /url: https://openai.com/policies/terms-of-use
+    - generic [ref=e189]: "|"
+    - link "Privacy Policy" [ref=e190] [cursor=pointer]:
+      - /url: https://openai.com/policies/privacy-policy

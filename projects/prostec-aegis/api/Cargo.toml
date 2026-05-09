@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.78"
 
+[lib]
+name = "aegis_api"
+path = "src/lib.rs"
+
 [[bin]]
 name = "aegis-api"
 path = "src/main.rs"
@@ -18,9 +22,10 @@ tokio = { version = "1", features = ["full"] }
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+base64 = "0.22"
 
 # Crypto — KEM / AEAD / KDF
-ml-kem = { version = "0.3", features = ["mlkem768"] }
+ml-kem = { version = "0.3", features = ["getrandom"] }
 p256 = { version = "0.13", features = ["ecdh", "ecdsa", "pkcs8", "pem"] }
 hkdf = "0.12"
 aes = "0.8"
@@ -31,12 +36,6 @@ rand = { version = "0.8", features = ["getrandom"] }
 rand_core = "0.6"
 zeroize = { version = "1.7", features = ["derive"] }
 subtle = "2"                              # constant-time comparisons
-
-# HPKE outer frame (RFC 9180)
-hpke = { version = "0.11", features = ["alloc"] }
-
-# OPAQUE (RFC 9807) — password-based key derivation for web clients
-opaque-ke = "2"
 
 # Ed25519 — for KeyBundle signing (Aegis CA)
 ed25519-dalek = { version = "2", features = ["serde", "pkcs8"] }
@@ -72,7 +71,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Config
-config = { version = "0.14", features = ["env"] }
+config = "0.14"
 
 [dev-dependencies]
 axum-test = "14"

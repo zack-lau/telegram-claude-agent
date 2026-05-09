@@ -1,0 +1,36 @@
+- generic [ref=e62]:
+  - heading "Enter your password" [level=1] [ref=e64]
+  - group [ref=e65]:
+    - form "Enter your password" [ref=e66]:
+      - generic [ref=e68]:
+        - generic [ref=e71]:
+          - generic:
+            - generic:
+              - generic: Email address
+          - textbox "Email address" [ref=e72]: zack@lzac.cc
+          - link "Edit email" [ref=e76] [cursor=pointer]:
+            - /url: /log-in?usernameKind=email
+            - text: Edit
+        - generic [ref=e79]:
+          - generic:
+            - generic:
+              - generic: Password
+          - textbox "Password" [active] [ref=e80]
+          - button "Show password" [ref=e83] [cursor=pointer]:
+            - img [ref=e84]
+        - link "Forgot password?" [ref=e87] [cursor=pointer]:
+          - /url: /reset-password
+      - generic [ref=e89]:
+        - button "Continue" [ref=e91] [cursor=pointer]
+        - generic [ref=e92]:
+          - text: Don't have an account?
+          - link "Sign up" [ref=e93] [cursor=pointer]:
+            - /url: /create-account
+        - generic [ref=e96]: OR
+        - button "Log in with a one-time code" [ref=e100] [cursor=pointer]
+  - generic [ref=e102]:
+    - link "Terms of Use" [ref=e103] [cursor=pointer]:
+      - /url: https://openai.com/policies/terms-of-use
+    - generic [ref=e104]: "|"
+    - link "Privacy Policy" [ref=e105] [cursor=pointer]:
+      - /url: https://openai.com/policies/privacy-policy

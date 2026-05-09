@@ -1,0 +1,31 @@
+- generic [ref=e107]:
+  - generic [ref=e108]:
+    - heading "Check your inbox" [level=1] [ref=e109]
+    - generic [ref=e110]: Enter the verification code we just sent to zack@lzac.cc
+  - group [ref=e111]:
+    - form "Check your inbox" [ref=e112]:
+      - generic [ref=e116]:
+        - generic:
+          - generic:
+            - generic: Code
+        - textbox "Code" [active] [ref=e117]
+      - generic [ref=e119]:
+        - generic [ref=e120]:
+          - button "Continue" [ref=e122] [cursor=pointer]
+          - button "Resend email" [ref=e124] [cursor=pointer]
+        - generic [ref=e127]: OR
+        - generic [ref=e129]:
+          - button "Google logo Continue with Google" [ref=e131] [cursor=pointer]:
+            - img "Google logo" [ref=e134]
+            - text: Continue with Google
+          - button "Apple logo Continue with Apple" [ref=e141] [cursor=pointer]:
+            - img "Apple logo" [ref=e144]
+            - text: Continue with Apple
+          - link "Continue with password" [ref=e149] [cursor=pointer]:
+            - /url: /log-in/password
+  - generic [ref=e151]:
+    - link "Terms of Use" [ref=e152] [cursor=pointer]:
+      - /url: https://openai.com/policies/terms-of-use
+    - generic [ref=e153]: "|"
+    - link "Privacy Policy" [ref=e154] [cursor=pointer]:
+      - /url: https://openai.com/policies/privacy-policy

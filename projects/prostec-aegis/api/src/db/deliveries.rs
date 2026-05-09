@@ -35,6 +35,7 @@ impl<'a> DeliveryStore<'a> {
         let envelope_header_str = item
             .get("envelope_header")
             .and_then(|v| v.as_s().ok())
+            .map(|s| s.as_str())
             .unwrap_or("");
 
         // Parse envelope to check recipient membership

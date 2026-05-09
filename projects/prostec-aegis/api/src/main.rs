@@ -18,11 +18,12 @@ async fn main() -> Result<()> {
         .init();
 
     let cfg = config::Config::load()?;
+    let port = cfg.port;
     let aws_cfg = aws_config::load_from_env().await;
     let app_state = state::AppState::new(cfg, &aws_cfg).await?;
     let app = routes::router(app_state);
 
-    let addr = format!("0.0.0.0:{}", cfg.port);
+    let addr = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     info!(addr, "listening");
 

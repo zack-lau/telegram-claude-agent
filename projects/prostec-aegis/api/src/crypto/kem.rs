@@ -6,14 +6,14 @@
 // FIPS-approvable: P-256 ECDH satisfies the "at least one approved KEM" rule
 // from SP 800-56C Rev.2.
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use hkdf::Hkdf;
 use ml_kem::{
-    kem::{DecapsulationKey, EncapsulationKey, Decapsulate, Encapsulate},
-    KemCore, MlKem768, MlKem768Params,
+    Ciphertext, Decapsulate, DecapsulationKey, Encapsulate, EncapsulationKey, Kem, MlKem768,
 };
 use p256::{
     ecdh::EphemeralSecret,
+    elliptic_curve::sec1::ToEncodedPoint,
     PublicKey as P256PublicKey, SecretKey as P256SecretKey,
 };
 use rand_core::OsRng;
@@ -30,28 +30,22 @@ pub const ENCAP_LEN: usize = 1088 + 33;
 pub struct SharedSecret(pub [u8; 48]); // HKDF-SHA384 output
 
 pub struct RecipientPublicKey {
-    pub kem: EncapsulationKey<MlKem768Params>,
+    pub kem: EncapsulationKey<MlKem768>,
     pub ec: P256PublicKey,
 }
 
 pub struct RecipientSecretKey {
-    pub kem: DecapsulationKey<MlKem768Params>,
+    pub kem: DecapsulationKey<MlKem768>,
     pub ec: P256SecretKey,
 }
 
 /// Encapsulate: produce (encap bytes, shared_secret) from recipient public keys.
-///
-/// `pk_recipient_kem_bytes` is the recipient's ML-KEM-768 encapsulation key (1184 bytes).
-/// `pk_recipient_ec_bytes`  is the recipient's P-256 public key (65 bytes uncompressed,
-///                           or 33 bytes compressed).
 pub fn encapsulate(
-    pk_kem: &EncapsulationKey<MlKem768Params>,
+    pk_kem: &EncapsulationKey<MlKem768>,
     pk_ec: &P256PublicKey,
 ) -> Result<([u8; ENCAP_LEN], SharedSecret)> {
-    // ML-KEM-768 encapsulation
-    let (ct_pq, ss_pq) = pk_kem
-        .encapsulate(&mut OsRng)
-        .map_err(|_| anyhow::anyhow!("ml-kem encapsulation failed"))?;
+    // ML-KEM-768 encapsulation — getrandom feature provides this no-RNG variant
+    let (ct_pq, ss_pq) = pk_kem.encapsulate();
 
     // P-256 ephemeral ECDH
     let sk_eph = EphemeralSecret::random(&mut OsRng);
@@ -61,21 +55,24 @@ pub fn encapsulate(
         .raw_secret_bytes()
         .to_vec();
 
-    let pk_eph_bytes = pk_eph.to_sec1_bytes(); // 33 B compressed
-    let pk_ec_bytes = pk_ec.to_sec1_bytes();
+    // Use compressed SEC1 (33 bytes) to fit ENCAP_LEN and keep transcript consistent.
+    let pk_eph_enc = pk_eph.to_encoded_point(true);
+    let pk_eph_bytes = pk_eph_enc.as_bytes();
+    let pk_ec_enc = pk_ec.to_encoded_point(true);
+    let pk_ec_bytes = pk_ec_enc.as_bytes();
     let ct_pq_bytes = ct_pq.as_ref();
 
     let shared_secret = combine_secrets(
         ss_pq.as_ref(),
         &ss_ec_bytes,
         ct_pq_bytes,
-        &pk_eph_bytes,
-        &pk_ec_bytes,
+        pk_eph_bytes,
+        pk_ec_bytes,
     )?;
 
     let mut encap = [0u8; ENCAP_LEN];
     encap[..1088].copy_from_slice(ct_pq_bytes);
-    encap[1088..].copy_from_slice(&pk_eph_bytes);
+    encap[1088..].copy_from_slice(pk_eph_bytes);
 
     Ok((encap, shared_secret))
 }
@@ -83,20 +80,19 @@ pub fn encapsulate(
 /// Decapsulate: recover shared_secret from encap bytes + recipient secret keys.
 pub fn decapsulate(
     encap: &[u8; ENCAP_LEN],
-    sk_kem: &DecapsulationKey<MlKem768Params>,
+    sk_kem: &DecapsulationKey<MlKem768>,
     sk_ec: &P256SecretKey,
     pk_ec: &P256PublicKey,
 ) -> Result<SharedSecret> {
     let ct_pq_bytes = &encap[..1088];
     let pk_eph_bytes = &encap[1088..];
 
-    // ML-KEM-768 ciphertext is a fixed-size newtype; borrow as a reference.
-    let ct_pq = ml_kem::kem::Ciphertext::<MlKem768Params>::try_from(ct_pq_bytes)
+    // Ciphertext<MlKem768> is Array<u8, 1088>; TryFrom<&[u8]> validates length.
+    let ct_pq = Ciphertext::<MlKem768>::try_from(ct_pq_bytes)
         .map_err(|_| anyhow::anyhow!("invalid ml-kem ciphertext length"))?;
 
-    let ss_pq = sk_kem
-        .decapsulate(&ct_pq)
-        .map_err(|_| anyhow::anyhow!("ml-kem decapsulation failed"))?;
+    // Decapsulation returns SharedKey directly (implicit rejection on wrong key)
+    let ss_pq = sk_kem.decapsulate(&ct_pq);
 
     let pk_eph = P256PublicKey::from_sec1_bytes(pk_eph_bytes)
         .map_err(|_| anyhow::anyhow!("invalid p256 ephemeral public key"))?;
@@ -105,14 +101,15 @@ pub fn decapsulate(
         .raw_secret_bytes()
         .to_vec();
 
-    let pk_ec_bytes = pk_ec.to_sec1_bytes();
+    let pk_ec_enc = pk_ec.to_encoded_point(true);
+    let pk_ec_bytes = pk_ec_enc.as_bytes();
 
     combine_secrets(
         ss_pq.as_ref(),
         &ss_ec_bytes,
         ct_pq_bytes,
         pk_eph_bytes,
-        &pk_ec_bytes,
+        pk_ec_bytes,
     )
 }
 
@@ -131,7 +128,7 @@ fn combine_secrets(
     let (prk_ec, _) = Hkdf::<Sha384>::extract(Some(&zero_salt), ss_ec);
 
     // PRK_combined = HKDF-Extract(salt=PRK_ec, ikm=SS_ML-KEM-768)
-    let (prk_combined, _) = Hkdf::<Sha384>::extract(Some(prk_ec.as_slice()), ss_pq);
+    let (prk_combined, _) = Hkdf::<Sha384>::extract(Some(&prk_ec[..]), ss_pq);
 
     // Transcript info: label + length-prefixed ciphertext and public keys.
     // Length-prefixing prevents concatenation ambiguity between variable-length inputs.
@@ -145,7 +142,7 @@ fn combine_secrets(
     push_lv(&mut info, pk_ec_recipient);
 
     // SS_combined = HKDF-Expand(PRK_combined, info=transcript, L=48)
-    let hk = Hkdf::<Sha384>::from_prk(prk_combined.as_slice())
+    let hk = Hkdf::<Sha384>::from_prk(&prk_combined[..])
         .expect("prk_combined is valid SHA-384 output length");
     let mut okm = [0u8; 48];
     hk.expand(&info, &mut okm)
@@ -162,7 +159,7 @@ fn push_lv(buf: &mut Vec<u8>, data: &[u8]) {
 
 /// Generate a fresh ML-KEM-768 + P-256 keypair.
 pub fn generate_keypair() -> (RecipientPublicKey, RecipientSecretKey) {
-    let (dk, ek) = MlKem768::generate(&mut OsRng); // (DecapsulationKey, EncapsulationKey)
+    let (dk, ek) = MlKem768::generate_keypair(); // (DecapsulationKey, EncapsulationKey)
     let ec_sk = P256SecretKey::random(&mut OsRng);
     let ec_pk = ec_sk.public_key();
     (
@@ -188,9 +185,8 @@ mod tests {
         let (pk1, _sk1) = generate_keypair();
         let (_pk2, sk2) = generate_keypair();
         let (encap, ss_enc) = encapsulate(&pk1.kem, &pk1.ec).unwrap();
-        // Decap with wrong EC key — ss should differ
+        // Decap with wrong EC key — ss should differ (ml-kem uses implicit rejection)
         let ss_dec = decapsulate(&encap, &sk2.kem, &sk2.ec, &pk1.ec);
-        // ml-kem decapsulation will either fail or return wrong ss (implicit rejection)
         if let Ok(ss) = ss_dec {
             assert_ne!(ss_enc.0, ss.0);
         }

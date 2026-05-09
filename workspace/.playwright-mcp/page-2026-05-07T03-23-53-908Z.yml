@@ -1,0 +1,194 @@
+- generic [active] [ref=e1]:
+  - navigation "Product navigation" [ref=e2]:
+    - generic [ref=e4]:
+      - link "OriginVault E-Archive" [ref=e5] [cursor=pointer]:
+        - /url: /en/originvault
+        - generic [ref=e7]: OriginVault
+        - generic [ref=e8]: E-Archive
+      - link "OriginStamp Timestamp" [ref=e9] [cursor=pointer]:
+        - /url: /en/timestamp
+        - generic [ref=e11]: OriginStamp
+        - generic [ref=e12]: Timestamp
+  - main [ref=e13]:
+    - generic [ref=e17]:
+      - link "OriginStamp Logo" [ref=e19] [cursor=pointer]:
+        - /url: /en/originvault
+        - img "OriginStamp Logo" [ref=e21]
+      - navigation "Main navigation" [ref=e22]:
+        - button "Product" [ref=e24] [cursor=pointer]
+        - button "Solutions" [ref=e26] [cursor=pointer]
+        - button "Resources" [ref=e28] [cursor=pointer]
+      - link "Book a Meeting" [ref=e30] [cursor=pointer]:
+        - /url: /book-a-meeting
+    - generic [ref=e34]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - heading "Your Systems Are AI-Ready. Finally." [level=1] [ref=e39]
+          - paragraph [ref=e40]: Your ERP holds years of business-critical data. Your legacy systems hold decades more. None of it is accessible to AI. OriginVault breaks open monolithic systems, structures the data, and makes it queryable for your AI workflows.
+          - link "Request demo" [ref=e43] [cursor=pointer]:
+            - /url: /en/originvault/resources/demo
+            - text: Request demo
+            - img [ref=e45]
+        - img "A stylized orange plus sign with rounded, connected parts." [ref=e49]
+      - generic [ref=e51]:
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]:
+              - generic [ref=e56]:
+                - img [ref=e57]
+                - generic [ref=e59]: Search Archive ...
+              - generic [ref=e60]:
+                - img [ref=e61]
+                - img [ref=e63]
+                - img [ref=e65]
+                - generic [ref=e67]: OS
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - img [ref=e71]
+                - paragraph [ref=e72]: Archive
+                - img [ref=e74]
+                - img [ref=e78]
+                - img [ref=e82]
+                - generic [ref=e85]:
+                  - img [ref=e86]
+                  - generic [ref=e88]: AI Assistant
+                - img [ref=e90]
+                - img [ref=e94]
+                - img [ref=e99]
+                - paragraph [ref=e102]: Administration
+                - img [ref=e104]
+                - img [ref=e108]
+                - generic [ref=e111]:
+                  - img [ref=e112]
+                  - text: Collapse
+              - generic [ref=e114]:
+                - paragraph [ref=e115]: File Details
+                - generic [ref=e117]:
+                  - generic [ref=e118]:
+                    - img [ref=e120]
+                    - paragraph [ref=e122]: Batch_Q4_Export.csv
+                  - generic [ref=e123]:
+                    - img [ref=e125]
+                    - img [ref=e128]
+                    - img [ref=e131]
+                    - img [ref=e134]
+                    - generic [ref=e137]:
+                      - img [ref=e138]
+                      - text: Download
+                - generic [ref=e140]:
+                  - generic [ref=e141]:
+                    - generic [ref=e142]:
+                      - paragraph [ref=e144]: ERP Purchase Orders — Q4 2024
+                      - img [ref=e146]
+                    - generic [ref=e148]:
+                      - generic [ref=e149]: PO Number
+                      - generic [ref=e150]: Vendor
+                      - generic [ref=e151]: Amount
+                      - generic [ref=e152]: Status
+                    - generic [ref=e153]:
+                      - generic [ref=e154]: PO-2024-8812
+                      - generic [ref=e155]: Andrade Ltd.
+                      - generic [ref=e156]: €4,125
+                      - generic [ref=e157]: Matched
+                  - generic [ref=e175]:
+                    - generic [ref=e176]:
+                      - paragraph [ref=e177]: File Details
+                      - paragraph [ref=e178]: File Relations
+                    - paragraph [ref=e179]: Characteristics
+                    - generic [ref=e180]:
+                      - paragraph [ref=e181]: Document Name
+                      - paragraph [ref=e182]: Batch_Q4_Export.csv
+                    - paragraph [ref=e183]: Tags
+                    - generic [ref=e184]:
+                      - generic [ref=e185]: ERP Export
+                      - generic [ref=e186]: Q4-2024
+                    - paragraph [ref=e187]: Archiving Information
+                    - generic [ref=e188]:
+                      - paragraph [ref=e189]: Archived on
+                      - paragraph [ref=e190]: 27.10.2025
+                    - generic [ref=e191]:
+                      - img [ref=e192]
+                      - text: Compliance
+          - generic [ref=e194]:
+            - generic [ref=e195]:
+              - img [ref=e196]
+              - generic [ref=e198]:
+                - img [ref=e200]
+                - img [ref=e203]
+            - paragraph [ref=e205]: AI Assistant
+            - generic [ref=e206]:
+              - generic [ref=e207]:
+                - img [ref=e208]
+                - generic [ref=e210]:
+                  - strong [ref=e211]: Finance & ERP Data
+                  - text: 4 documents
+              - generic [ref=e212]:
+                - generic [ref=e213]: Cross-reference Invoice-847539 with our ERP export and verify retention compliance.
+                - paragraph [ref=e214]: 22.12.2025, 15:57
+              - img [ref=e221]
+              - paragraph [ref=e223]: Want me to flag all Q4 invoices without a matching PO?
+            - generic [ref=e224]:
+              - generic [ref=e225]: Ask your archive ...
+              - img [ref=e227]
+        - img "OriginVault dashboard with AI assistant analyzing ERP purchase orders for compliance verification" [ref=e229]
+  - contentinfo [ref=e287]:
+    - generic [ref=e289]:
+      - generic [ref=e290]:
+        - generic [ref=e291]:
+          - paragraph [ref=e292]: Efficiency that inspires – OriginStamp.
+          - paragraph [ref=e293]: The high-performance white-label archive for SaaS providers. Unlock new markets, achieve compliance in record time, and create outstanding customer experiences.
+        - generic [ref=e294]:
+          - paragraph [ref=e295]: Products & Services
+          - list [ref=e296]:
+            - listitem [ref=e297]:
+              - link "OriginVault" [ref=e298] [cursor=pointer]:
+                - /url: /en/originvault
+            - listitem [ref=e299]:
+              - link "OriginStamp" [ref=e300] [cursor=pointer]:
+                - /url: /en/timestamp
+            - listitem [ref=e301]:
+              - link "Enterprise Solutions" [ref=e302] [cursor=pointer]:
+                - /url: /en/solutions/custom
+            - listitem [ref=e303]:
+              - link "AI Analytics" [ref=e304] [cursor=pointer]:
+                - /url: /en/services/ai-analytics
+            - listitem [ref=e305]:
+              - link "MS 365 Consulting" [ref=e306] [cursor=pointer]:
+                - /url: /en/services/m365
+        - generic [ref=e307]:
+          - paragraph [ref=e308]: Company
+          - list [ref=e309]:
+            - listitem [ref=e310]:
+              - link "Blog" [ref=e311] [cursor=pointer]:
+                - /url: /en/blog
+            - listitem [ref=e312]:
+              - link "About Us" [ref=e313] [cursor=pointer]:
+                - /url: /en/about
+            - listitem [ref=e314]:
+              - link "Sustainability" [ref=e315] [cursor=pointer]:
+                - /url: /en/about/sustainability
+            - listitem [ref=e316]:
+              - link "Career" [ref=e317] [cursor=pointer]:
+                - /url: /en/about/career
+            - listitem [ref=e318]:
+              - link "Privacy Policy" [ref=e319] [cursor=pointer]:
+                - /url: /en/legal
+          - generic [ref=e320]:
+            - link "LinkedIn" [ref=e321] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/originstamp
+              - img [ref=e322]
+            - link "Instagram" [ref=e324] [cursor=pointer]:
+              - /url: https://www.instagram.com/originstamp
+              - img [ref=e325]
+      - generic [ref=e327]:
+        - paragraph [ref=e329]: © OriginStamp. All rights reserved.
+        - link "Swiss Made Software member" [ref=e331] [cursor=pointer]:
+          - /url: https://www.swissmadesoftware.org
+          - img "Swiss Made Software" [ref=e332]
+        - generic [ref=e333]:
+          - combobox "English" [ref=e334] [cursor=pointer]:
+            - paragraph [ref=e335]: EN
+          - textbox: en
+          - img
+          - group
+  - alert [ref=e336]

@@ -1,0 +1,326 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - link "BioDD Logo BioDD" [ref=e5] [cursor=pointer]:
+      - /url: "#"
+      - img "BioDD Logo" [ref=e6]
+      - generic [ref=e11]: BioDD
+    - generic [ref=e13]: BIOTECH DUE DILIGENCE PLATFORM
+    - generic [ref=e16]: LIVE
+    - generic [ref=e18]: ● US MARKETS CLOSED
+    - generic [ref=e20]:
+      - img [ref=e21]
+      - generic [ref=e23]: Institutional Research
+    - generic [ref=e25]: Apr 3, 2026 · 01:34 SGT
+  - complementary [ref=e26]:
+    - generic [ref=e27]:
+      - generic [ref=e28]: Watchlist
+      - generic [ref=e29] [cursor=pointer]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: RCKT
+          - generic [ref=e32]: Rocket Pharmaceuticals
+        - generic [ref=e33]:
+          - generic [ref=e34]: 20/25
+          - generic [ref=e35]: PAST
+      - generic [ref=e36] [cursor=pointer]:
+        - generic [ref=e37]:
+          - generic [ref=e38]: DNLI
+          - generic [ref=e39]: Denali Therapeutics
+        - generic [ref=e40]:
+          - generic [ref=e41]: 16/25
+          - generic [ref=e42]: PAST
+      - generic [ref=e43] [cursor=pointer]:
+        - generic [ref=e44]:
+          - generic [ref=e45]: CRSP
+          - generic [ref=e46]: CRISPR Therapeutics
+        - generic [ref=e47]:
+          - generic [ref=e48]: 17/25
+          - generic [ref=e49]: —
+      - generic [ref=e50] [cursor=pointer]:
+        - generic [ref=e51]:
+          - generic [ref=e52]: DVAX
+          - generic [ref=e53]: Dynavax Technologies
+        - generic [ref=e54]:
+          - generic [ref=e55]: 14/25
+          - generic [ref=e56]: —
+      - generic [ref=e57] [cursor=pointer]:
+        - generic [ref=e58]:
+          - generic [ref=e59]: VERV
+          - generic [ref=e60]: Verve Therapeutics
+        - generic [ref=e61]:
+          - generic [ref=e62]: 13/25
+          - generic [ref=e63]: —
+      - generic [ref=e64] [cursor=pointer]:
+        - generic [ref=e65]:
+          - generic [ref=e66]: SGTX
+          - generic [ref=e67]: Sight Sciences
+        - generic [ref=e68]:
+          - generic [ref=e69]: 9/25
+          - generic [ref=e70]: —
+    - generic [ref=e71]:
+      - generic [ref=e72]: Pipeline Status
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - img [ref=e76]
+            - generic [ref=e79]: RCKT
+          - generic [ref=e80]: OK
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - img [ref=e83]
+            - generic [ref=e86]: DNLI
+          - generic [ref=e87]: OK
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - img [ref=e90]
+            - generic [ref=e93]: CRSP
+          - generic [ref=e94]: OK
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - img [ref=e97]
+            - generic [ref=e100]: DVAX
+          - generic [ref=e101]: OK
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - img [ref=e104]
+            - generic [ref=e107]: VERV
+          - generic [ref=e108]: OK
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - img [ref=e111]
+            - generic [ref=e114]: SGTX
+          - generic [ref=e115]: TIMEOUT
+    - generic [ref=e116]:
+      - generic [ref=e117]: Scan Info
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - img [ref=e120]
+          - generic [ref=e125]:
+            - generic [ref=e126]: Last Scan
+            - generic [ref=e127]: Apr 3, 2026 00:15 SGT
+        - generic [ref=e128]:
+          - img [ref=e129]
+          - generic [ref=e133]:
+            - generic [ref=e134]: Next Scan
+            - generic [ref=e135]: Apr 4, 2026 00:00 SGT
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - generic [ref=e138]: OK
+            - generic [ref=e139]: 5 / 6
+          - generic [ref=e140]:
+            - generic [ref=e141]: TIMEOUT
+            - generic [ref=e142]: 1 / 6
+          - generic [ref=e143]:
+            - generic [ref=e144]: FAIL
+            - generic [ref=e145]: 0 / 6
+    - generic [ref=e146]:
+      - generic [ref=e147]: PDUFA Calendar
+      - generic [ref=e148]:
+        - generic [ref=e149] [cursor=pointer]:
+          - generic [ref=e150]:
+            - generic [ref=e151]: RCKT
+            - generic [ref=e152]: 03-28
+          - generic [ref=e153]: PAST
+        - generic [ref=e154] [cursor=pointer]:
+          - generic [ref=e155]:
+            - generic [ref=e156]: DNLI
+            - generic [ref=e157]: 04-05
+          - generic [ref=e158]: PAST
+  - main [ref=e159]:
+    - generic [ref=e160]:
+      - generic [ref=e161]:
+        - generic [ref=e162]:
+          - generic [ref=e163]: TRACKED TICKERS
+          - generic [ref=e164]: "6"
+          - generic [ref=e165]: Watchlist
+        - generic [ref=e166]:
+          - generic [ref=e167]: PDUFA IN <30D
+          - generic [ref=e168]: "0"
+          - generic [ref=e169]: Action required
+        - generic [ref=e170]:
+          - generic [ref=e171]: PDUFA CRITICAL
+          - generic [ref=e172]: "0"
+          - generic [ref=e173]: <14 days
+        - generic [ref=e174]:
+          - generic [ref=e175]: AVG DD SCORE
+          - generic [ref=e176]: "14.8"
+          - generic [ref=e177]: Out of 25
+        - generic [ref=e178]:
+          - generic [ref=e179]: PENDING PDUFA
+          - generic [ref=e180]: "2"
+          - generic [ref=e181]: Awaiting decision
+      - generic [ref=e182]:
+        - generic [ref=e183]:
+          - img [ref=e184]
+          - textbox "Search ticker, drug, indication…" [ref=e187]
+        - generic [ref=e189]: "STATUS:"
+        - button "All" [ref=e190] [cursor=pointer]
+        - button "Pending" [ref=e191] [cursor=pointer]
+        - button "Approved" [ref=e192] [cursor=pointer]
+        - button "CRL" [ref=e193] [cursor=pointer]
+        - generic [ref=e194]: 6 of 6 tickers
+      - table [ref=e196]:
+        - rowgroup [ref=e197]:
+          - row "Ticker Company Drug / Asset Indication PDUFA Date Days Until Score Status NME Flags" [ref=e198]:
+            - columnheader "Ticker" [ref=e199] [cursor=pointer]:
+              - generic [ref=e200]:
+                - text: Ticker
+                - img [ref=e201]
+            - columnheader "Company" [ref=e204] [cursor=pointer]:
+              - generic [ref=e205]:
+                - text: Company
+                - img [ref=e206]
+            - columnheader "Drug / Asset" [ref=e209] [cursor=pointer]:
+              - generic [ref=e210]:
+                - text: Drug / Asset
+                - img [ref=e211]
+            - columnheader "Indication" [ref=e214] [cursor=pointer]:
+              - generic [ref=e215]:
+                - text: Indication
+                - img [ref=e216]
+            - columnheader "PDUFA Date" [ref=e219] [cursor=pointer]:
+              - generic [ref=e220]:
+                - text: PDUFA Date
+                - img [ref=e221]
+            - columnheader "Days Until" [ref=e224] [cursor=pointer]:
+              - generic [ref=e225]:
+                - text: Days Until
+                - img
+            - columnheader "Score" [ref=e227] [cursor=pointer]:
+              - generic [ref=e228]:
+                - text: Score
+                - img [ref=e229]
+            - columnheader "Status" [ref=e232] [cursor=pointer]:
+              - generic [ref=e233]:
+                - text: Status
+                - img [ref=e234]
+            - columnheader "NME" [ref=e237] [cursor=pointer]:
+              - generic [ref=e238]:
+                - text: NME
+                - img [ref=e239]
+            - columnheader "Flags":
+              - generic: Flags
+        - rowgroup [ref=e242]:
+          - row "RCKT Rocket Pharmaceuticals RP-L201 (Kresladi) Leukocyte Adhesion Deficiency-I (LAD-I) 2026-03-28 15d ago 20/25 ✓ APPROVED NME ✓ PRV 3" [ref=e243] [cursor=pointer]:
+            - cell "RCKT" [ref=e244]:
+              - generic [ref=e245]: RCKT
+            - cell "Rocket Pharmaceuticals" [ref=e246]:
+              - generic [ref=e247]: Rocket Pharmaceuticals
+            - cell "RP-L201 (Kresladi)" [ref=e248]:
+              - generic [ref=e249]: RP-L201 (Kresladi)
+            - cell "Leukocyte Adhesion Deficiency-I (LAD-I)" [ref=e250]:
+              - generic [ref=e251]: Leukocyte Adhesion Deficiency-I (LAD-I)
+            - cell "2026-03-28" [ref=e252]
+            - cell "15d ago" [ref=e253]:
+              - generic [ref=e254]: 15d ago
+            - cell "20/25" [ref=e255]:
+              - generic [ref=e256]: 20/25
+            - cell "✓ APPROVED" [ref=e257]
+            - cell "NME ✓" [ref=e258]
+            - cell "PRV 3":
+              - generic:
+                - generic [ref=e259]: PRV
+                - generic "Limited commercial market — LAD-I prevalence ~1:100,000; peak revenue estimates $150–250M" [ref=e260]:
+                  - img [ref=e261]
+                  - generic [ref=e263]: "3"
+          - row "DNLI Denali Therapeutics DNL343 (ALS-IND12) Amyotrophic Lateral Sclerosis (ALS) — SOD1 2026-04-05 7d ago 16/25 ⏳ PENDING NME ~ PRV 4" [ref=e264] [cursor=pointer]:
+            - cell "DNLI" [ref=e265]:
+              - generic [ref=e266]: DNLI
+            - cell "Denali Therapeutics" [ref=e267]:
+              - generic [ref=e268]: Denali Therapeutics
+            - cell "DNL343 (ALS-IND12)" [ref=e269]:
+              - generic [ref=e270]: DNL343 (ALS-IND12)
+            - cell "Amyotrophic Lateral Sclerosis (ALS) — SOD1" [ref=e271]:
+              - generic [ref=e272]: Amyotrophic Lateral Sclerosis (ALS) — SOD1
+            - cell "2026-04-05" [ref=e273]
+            - cell "7d ago" [ref=e274]:
+              - generic [ref=e275]: 7d ago
+            - cell "16/25" [ref=e276]:
+              - generic [ref=e277]: 16/25
+            - cell "⏳ PENDING" [ref=e278]
+            - cell "NME ~" [ref=e279]
+            - cell "PRV 4":
+              - generic:
+                - generic [ref=e280]: PRV
+                - generic "PDUFA in 2 days — FDA requested additional CMC data in Day 100 information request; response filed Feb 2026" [ref=e281]:
+                  - img [ref=e282]
+                  - generic [ref=e284]: "4"
+          - row "CRSP CRISPR Therapeutics CTX001 (Casgevy) / CTX112 Sickle Cell Disease / DLBCL (CAR-T) — — 17/25 ✓ APPROVED NME ✓ 4" [ref=e285] [cursor=pointer]:
+            - cell "CRSP" [ref=e286]:
+              - generic [ref=e287]: CRSP
+            - cell "CRISPR Therapeutics" [ref=e288]:
+              - generic [ref=e289]: CRISPR Therapeutics
+            - cell "CTX001 (Casgevy) / CTX112" [ref=e290]:
+              - generic [ref=e291]: CTX001 (Casgevy) / CTX112
+            - cell "Sickle Cell Disease / DLBCL (CAR-T)" [ref=e292]:
+              - generic [ref=e293]: Sickle Cell Disease / DLBCL (CAR-T)
+            - cell "—" [ref=e294]
+            - cell "—" [ref=e295]
+            - cell "17/25" [ref=e296]:
+              - generic [ref=e297]: 17/25
+            - cell "✓ APPROVED" [ref=e298]
+            - cell "NME ✓" [ref=e299]
+            - cell "4":
+              - 'generic "Casgevy commercial uptake below consensus: 38 patients treated through Q4 2025 vs. Street model of 60-80" [ref=e300]':
+                - img [ref=e301]
+                - generic [ref=e303]: "4"
+          - row "DVAX Dynavax Technologies HEPLISAV-B / CpG 1018 Adjuvant Hepatitis B Vaccine / Pandemic Preparedness Adjuvant — — 14/25 ✓ APPROVED NME ✓ CRL↑ 4" [ref=e304] [cursor=pointer]:
+            - cell "DVAX" [ref=e305]:
+              - generic [ref=e306]: DVAX
+            - cell "Dynavax Technologies" [ref=e307]:
+              - generic [ref=e308]: Dynavax Technologies
+            - cell "HEPLISAV-B / CpG 1018 Adjuvant" [ref=e309]:
+              - generic [ref=e310]: HEPLISAV-B / CpG 1018 Adjuvant
+            - cell "Hepatitis B Vaccine / Pandemic Preparedness Adjuvant" [ref=e311]:
+              - generic [ref=e312]: Hepatitis B Vaccine / Pandemic Preparedness Adjuvant
+            - cell "—" [ref=e313]
+            - cell "—" [ref=e314]
+            - cell "14/25" [ref=e315]:
+              - generic [ref=e316]: 14/25
+            - cell "✓ APPROVED" [ref=e317]
+            - cell "NME ✓" [ref=e318]
+            - cell "CRL↑ 4":
+              - generic:
+                - generic [ref=e319]: CRL↑
+                - 'generic "CRL history: HEPLISAV-B received 2 CRLs (2012, 2013) before eventual 2017 approval — regulatory track record warrants scrutiny" [ref=e320]':
+                  - img [ref=e321]
+                  - generic [ref=e323]: "4"
+          - row "VERV Verve Therapeutics VERVE-101 / VERVE-102 Heterozygous Familial Hypercholesterolemia (HeFH) — PCSK9 Editing — — 13/25 ⏳ PENDING NME ~ 5" [ref=e324] [cursor=pointer]:
+            - cell "VERV" [ref=e325]:
+              - generic [ref=e326]: VERV
+            - cell "Verve Therapeutics" [ref=e327]:
+              - generic [ref=e328]: Verve Therapeutics
+            - cell "VERVE-101 / VERVE-102" [ref=e329]:
+              - generic [ref=e330]: VERVE-101 / VERVE-102
+            - cell "Heterozygous Familial Hypercholesterolemia (HeFH) — PCSK9 Editing" [ref=e331]:
+              - generic [ref=e332]: Heterozygous Familial Hypercholesterolemia (HeFH) — PCSK9 Editing
+            - cell "—" [ref=e333]
+            - cell "—" [ref=e334]
+            - cell "13/25" [ref=e335]:
+              - generic [ref=e336]: 13/25
+            - cell "⏳ PENDING" [ref=e337]
+            - cell "NME ~" [ref=e338]
+            - cell "5":
+              - generic "VERVE-101 FDA partial clinical hold lifted April 2025 but FDA imposed enhanced safety monitoring; enrollment paused 9 months" [ref=e339]:
+                - img [ref=e340]
+                - generic [ref=e342]: "5"
+          - row "SGTX Sight Sciences OMNI / TearCare Glaucoma (MIGS) / Dry Eye Disease (MBE) — — 9/25 ✓ APPROVED NME ✓ CRL↑ 5" [ref=e343] [cursor=pointer]:
+            - cell "SGTX" [ref=e344]:
+              - generic [ref=e345]: SGTX
+            - cell "Sight Sciences" [ref=e346]:
+              - generic [ref=e347]: Sight Sciences
+            - cell "OMNI / TearCare" [ref=e348]:
+              - generic [ref=e349]: OMNI / TearCare
+            - cell "Glaucoma (MIGS) / Dry Eye Disease (MBE)" [ref=e350]:
+              - generic [ref=e351]: Glaucoma (MIGS) / Dry Eye Disease (MBE)
+            - cell "—" [ref=e352]
+            - cell "—" [ref=e353]
+            - cell "9/25" [ref=e354]:
+              - generic [ref=e355]: 9/25
+            - cell "✓ APPROVED" [ref=e356]
+            - cell "NME ✓" [ref=e357]
+            - cell "CRL↑ 5":
+              - generic:
+                - generic [ref=e358]: CRL↑
+                - 'generic "CRL history: TearCare additional 510(k) clearance delayed 2022 — required re-labeling and restricted indication" [ref=e359]':
+                  - img [ref=e360]
+                  - generic [ref=e362]: "5"

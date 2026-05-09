@@ -21,6 +21,7 @@ struct Inner {
     pub cognito: CognitoClient,
     pub kms: KmsClient,
     pub jwt: JwtValidator,
+    pub http: reqwest::Client,
 }
 
 impl AppState {
@@ -34,6 +35,7 @@ impl AppState {
             cognito: CognitoClient::new(aws_cfg),
             kms: KmsClient::new(aws_cfg),
             jwt,
+            http: reqwest::Client::new(),
             cfg,
         })))
     }
@@ -64,5 +66,9 @@ impl AppState {
 
     pub fn jwt(&self) -> &JwtValidator {
         &self.0.jwt
+    }
+
+    pub fn http(&self) -> &reqwest::Client {
+        &self.0.http
     }
 }

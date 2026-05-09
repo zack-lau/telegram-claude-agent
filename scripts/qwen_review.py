@@ -14,6 +14,7 @@ Usage (on sgdgx01 directly):
 """
 
 import argparse
+import os
 import re
 import signal
 import subprocess
@@ -28,7 +29,7 @@ except ImportError:
     print("Error: openai SDK not found. Run: /home/agents/perplexity-mcp/.venv/bin/pip install openai", file=sys.stderr)
     sys.exit(1)
 
-BASE_URL = "http://localhost:8000/v1"
+BASE_URL = os.environ.get("OPENAI_BASE_URL", "http://localhost:8000/v1")
 MODEL = "qwen3.6"
 MAX_FILE_BYTES = 512 * 1024
 MAX_TOKENS = 32000  # thinking tokens count against budget; 32K gives room for both reasoning + review

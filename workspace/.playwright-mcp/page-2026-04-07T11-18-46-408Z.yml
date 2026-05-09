@@ -1,0 +1,115 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation "Main" [ref=e7]:
+        - generic [ref=e8]:
+          - generic [ref=e15]:
+            - link "Search ⌥⌘1" [ref=e16] [cursor=pointer]:
+              - /url: /
+              - img [ref=e18]
+              - generic [ref=e20]: Search
+              - generic [ref=e22]: ⌥⌘1
+            - link "Computer ⌥⌘2" [ref=e23] [cursor=pointer]:
+              - /url: /computer/new
+              - img [ref=e27]
+              - generic [ref=e32]: Computer
+              - generic [ref=e34]: ⌥⌘2
+          - generic [ref=e35]:
+            - button "New thread ⌘K" [ref=e37] [cursor=pointer]:
+              - generic [ref=e38]:
+                - img [ref=e44]
+                - generic [ref=e46]: New thread
+                - generic [ref=e48]: ⌘K
+            - generic [ref=e49]:
+              - generic [ref=e51]:
+                - link "History" [ref=e52] [cursor=pointer]:
+                  - /url: /library
+                  - generic [ref=e53]:
+                    - img [ref=e58]
+                    - generic [ref=e60]: History
+                - link "Discover" [ref=e61] [cursor=pointer]:
+                  - /url: /discover
+                  - generic [ref=e62]:
+                    - img [ref=e67]
+                    - generic [ref=e69]: Discover
+                - link "Spaces" [ref=e70] [cursor=pointer]:
+                  - /url: /spaces
+                  - generic [ref=e71]:
+                    - img [ref=e76]
+                    - generic [ref=e78]: Spaces
+                - link "Finance" [ref=e79] [cursor=pointer]:
+                  - /url: /finance
+                  - generic [ref=e80]:
+                    - img [ref=e85]
+                    - generic [ref=e87]: Finance
+                - link "Health" [ref=e88] [cursor=pointer]:
+                  - /url: /health
+                  - generic [ref=e89]:
+                    - img [ref=e94]
+                    - generic [ref=e96]: Health
+                - button "More" [ref=e97] [cursor=pointer]:
+                  - generic [ref=e98]:
+                    - img [ref=e103]
+                    - generic [ref=e105]: More
+              - generic [ref=e111]:
+                - button "History" [ref=e113] [cursor=pointer]:
+                  - text: History
+                  - img [ref=e114]
+                - generic [ref=e116]: Recent and active threads will appear here.
+      - main [ref=e122]:
+        - generic [ref=e129]:
+          - generic:
+            - generic:
+              - img "Perplexity" [ref=e132]
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                  - generic:
+                    - img "Perplexity Computer"
+          - generic [ref=e142]:
+            - generic [ref=e144]:
+              - textbox [active] [ref=e145]:
+                - paragraph [ref=e146]
+              - generic:
+                - generic: Ask anything…
+            - generic [ref=e148]:
+              - button "Add files or tools" [ref=e149] [cursor=pointer]:
+                - img [ref=e152]
+              - button "Computer" [ref=e156] [cursor=pointer]:
+                - generic [ref=e158]:
+                  - img [ref=e160]
+                  - img [ref=e163]
+                - generic [ref=e165]: Computer
+                - img [ref=e167]
+            - generic [ref=e169]:
+              - button "Model" [ref=e171] [cursor=pointer]:
+                - generic [ref=e172]: Model
+                - img [ref=e174]
+              - button "Dictation" [ref=e178] [cursor=pointer]:
+                - img [ref=e181]
+              - button "Use voice mode" [ref=e184] [cursor=pointer]:
+                - img [ref=e187]
+    - generic [ref=e192]:
+      - button "Close" [ref=e194] [cursor=pointer]:
+        - img [ref=e197]
+      - img "Perplexity" [ref=e203]
+      - generic [ref=e205]: Sign in or create an account
+      - generic [ref=e206]: Save and sync your searches
+      - generic [ref=e209]:
+        - generic [ref=e210]:
+          - button "Continue with Google" [ref=e211] [cursor=pointer]:
+            - img [ref=e213]
+            - generic [ref=e215]: Continue with Google
+          - button "Continue with Apple" [ref=e217] [cursor=pointer]:
+            - img [ref=e219]
+            - generic [ref=e221]: Continue with Apple
+        - generic [ref=e224]:
+          - generic [ref=e226]:
+            - textbox "Enter your email" [ref=e231]
+            - generic [ref=e232]:
+              - button "Continue with email" [disabled]:
+                - generic: Continue with email
+          - button "Single sign-on (SSO)" [ref=e234] [cursor=pointer]:
+            - generic [ref=e235]: Single sign-on (SSO)
+  - listbox "Typeahead menu"

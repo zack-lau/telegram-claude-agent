@@ -1,0 +1,22 @@
+[      65ms] [ERROR] Error: No QueryClient set, use QueryClientProvider to set one
+    at Dm (http://192.168.22.3:4173/assets/index-CE40jM0z.js:48:40202)
+    at Bm (http://192.168.22.3:4173/assets/index-CE40jM0z.js:48:41429)
+    at Hm (http://192.168.22.3:4173/assets/index-CE40jM0z.js:48:42480)
+    at My (http://192.168.22.3:4173/assets/index-CE40jM0z.js:198:60044)
+    at Dy (http://192.168.22.3:4173/assets/index-CE40jM0z.js:198:60236)
+    at lo (http://192.168.22.3:4173/assets/index-CE40jM0z.js:38:17072)
+    at od (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:44319)
+    at rd (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:39986)
+    at up (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:39914)
+    at Os (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:39767) @ http://192.168.22.3:4173/assets/index-CE40jM0z.js:39
+[      68ms] Error: No QueryClient set, use QueryClientProvider to set one
+    at Dm (http://192.168.22.3:4173/assets/index-CE40jM0z.js:48:40202)
+    at Bm (http://192.168.22.3:4173/assets/index-CE40jM0z.js:48:41429)
+    at Hm (http://192.168.22.3:4173/assets/index-CE40jM0z.js:48:42480)
+    at My (http://192.168.22.3:4173/assets/index-CE40jM0z.js:198:60044)
+    at Dy (http://192.168.22.3:4173/assets/index-CE40jM0z.js:198:60236)
+    at lo (http://192.168.22.3:4173/assets/index-CE40jM0z.js:38:17072)
+    at od (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:44319)
+    at rd (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:39986)
+    at up (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:39914)
+    at Os (http://192.168.22.3:4173/assets/index-CE40jM0z.js:40:39767)

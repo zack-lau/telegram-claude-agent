@@ -13,6 +13,10 @@ pub struct Config {
     pub cognito_jwks_uri: String,
     pub secrets_manager_config_arn: String,
     pub kms_oauth_tokens_key_id: String,
+    /// Secrets Manager ARN for Google OAuth app credentials (client_id + client_secret JSON).
+    pub google_oauth_client_id_secret_arn: String,
+    /// Secrets Manager ARN for Microsoft OAuth app credentials (client_id + client_secret JSON).
+    pub microsoft_oauth_client_id_secret_arn: String,
 }
 
 fn default_port() -> u16 {

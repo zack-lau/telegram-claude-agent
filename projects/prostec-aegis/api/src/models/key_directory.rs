@@ -8,15 +8,18 @@ pub struct KeyDirectoryRecord {
     pub recipient_id: Uuid,
     /// ML-KEM-768 encapsulation key (1184 bytes), base64url.
     pub kem_pk_b64: String,
-    /// P-256 public key, SEC1 compressed (33 bytes), base64url.
+    /// P-256 ECDH public key, SEC1 compressed (33 bytes), base64url.
     pub ec_pk_b64: String,
+    /// P-256 ECDSA verification key, SEC1 uncompressed (65 bytes), base64url.
+    /// Published so recipients can verify envelope sender signatures (ADR 0003 §D7).
+    pub ecdsa_pk_b64: Option<String>,
     pub key_version: u8,
     pub expires_at: DateTime<Utc>,
     /// Ed25519 signature over canonical bundle bytes, base64url.
     pub signature_b64: String,
     /// Aegis CA key fingerprint.
     pub signer_key_id: String,
-    /// OPAQUE encrypted private key blob — AES-256-GCM(k_wrap, sk_id).
+    /// OPAQUE encrypted private key blob — AES-256-KWP(k_wrap[..32], private_key_bytes) per ADR 0003 §D5.
     pub enc_sk_b64: String,
     /// OPAQUE encrypted private key blob for recovery code path.
     pub enc_sk_recovery_b64: Option<String>,
@@ -28,6 +31,8 @@ pub struct KeyDirectoryRecord {
 pub struct RegisterKeyBundleRequest {
     pub kem_pk_b64: String,
     pub ec_pk_b64: String,
+    /// P-256 ECDSA verification key, SEC1 uncompressed (65 bytes), base64url (ADR 0003 §D7).
+    pub ecdsa_pk_b64: Option<String>,
     /// Encrypted private key blob from OPAQUE registration.
     pub enc_sk_b64: String,
     pub enc_sk_recovery_b64: Option<String>,
@@ -39,6 +44,9 @@ pub struct KeyBundleResponse {
     pub recipient_id: Uuid,
     pub kem_pk_b64: String,
     pub ec_pk_b64: String,
+    /// Present when the key owner has registered an ECDSA signing key.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ecdsa_pk_b64: Option<String>,
     pub version: u8,
     pub expires_at: DateTime<Utc>,
     pub signature_b64: String,

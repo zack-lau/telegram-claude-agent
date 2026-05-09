@@ -20,7 +20,7 @@ impl<'a> SessionStore<'a> {
     pub fn new(ddb: &'a DdbClient, table_prefix: &str) -> Self {
         Self {
             ddb,
-            table: format!("{}-oauth-tokens", table_prefix),
+            table: format!("{}-sessions", table_prefix),
         }
     }
 

@@ -1,0 +1,95 @@
+- generic [active] [ref=e1]:
+  - navigation "Product navigation" [ref=e2]:
+    - generic [ref=e4]:
+      - link "OriginVault E-Archive" [ref=e5] [cursor=pointer]:
+        - /url: /en/originvault
+        - generic [ref=e7]: OriginVault
+        - generic [ref=e8]: E-Archive
+      - link "OriginStamp Timestamp" [ref=e9] [cursor=pointer]:
+        - /url: /en/timestamp
+        - generic [ref=e11]: OriginStamp
+        - generic [ref=e12]: Timestamp
+  - main [ref=e13]:
+    - generic [ref=e17]:
+      - link "OriginStamp Logo" [ref=e19] [cursor=pointer]:
+        - /url: /en/timestamp
+        - img "OriginStamp Logo" [ref=e21]
+      - navigation "Main navigation" [ref=e22]:
+        - button "Applications" [ref=e24] [cursor=pointer]
+        - button "Industries" [ref=e26] [cursor=pointer]
+        - button "Resources" [ref=e28] [cursor=pointer]
+      - link "Try Free" [ref=e30] [cursor=pointer]:
+        - /url: /en/timestamp/resources/demo
+    - generic [ref=e34]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - heading "Where Digital Content Becomes Tamper-Proof" [level=1] [ref=e39]
+          - paragraph [ref=e40]: Digital data is easy to manipulate. OriginStamp changes that. Anchor any document, file, or dataset on Bitcoin and Ethereum, and prove its existence at a specific point in time. Independently, globally, forever.
+          - link "Book a Meeting Now" [ref=e43] [cursor=pointer]:
+            - /url: /book-a-meeting/timestamp
+            - text: Book a Meeting Now
+            - img [ref=e45]
+        - img "A blocky, abstract purple shape with a central hole." [ref=e49]
+      - img "Man sitting focused in front of a monitor with glowing AI brain graphic." [ref=e53]
+    - img "Abstract orange logo of six connected, rounded squares." [ref=e66]
+  - contentinfo [ref=e117]:
+    - generic [ref=e119]:
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - paragraph [ref=e122]: Efficiency that inspires – OriginStamp.
+          - paragraph [ref=e123]: The high-performance white-label archive for SaaS providers. Unlock new markets, achieve compliance in record time, and create outstanding customer experiences.
+        - generic [ref=e124]:
+          - paragraph [ref=e125]: Products & Services
+          - list [ref=e126]:
+            - listitem [ref=e127]:
+              - link "OriginVault" [ref=e128] [cursor=pointer]:
+                - /url: /en/originvault
+            - listitem [ref=e129]:
+              - link "OriginStamp" [ref=e130] [cursor=pointer]:
+                - /url: /en/timestamp
+            - listitem [ref=e131]:
+              - link "Enterprise Solutions" [ref=e132] [cursor=pointer]:
+                - /url: /en/solutions/custom
+            - listitem [ref=e133]:
+              - link "AI Analytics" [ref=e134] [cursor=pointer]:
+                - /url: /en/services/ai-analytics
+            - listitem [ref=e135]:
+              - link "MS 365 Consulting" [ref=e136] [cursor=pointer]:
+                - /url: /en/services/m365
+        - generic [ref=e137]:
+          - paragraph [ref=e138]: Company
+          - list [ref=e139]:
+            - listitem [ref=e140]:
+              - link "Blog" [ref=e141] [cursor=pointer]:
+                - /url: /en/blog
+            - listitem [ref=e142]:
+              - link "About Us" [ref=e143] [cursor=pointer]:
+                - /url: /en/about
+            - listitem [ref=e144]:
+              - link "Sustainability" [ref=e145] [cursor=pointer]:
+                - /url: /en/about/sustainability
+            - listitem [ref=e146]:
+              - link "Career" [ref=e147] [cursor=pointer]:
+                - /url: /en/about/career
+            - listitem [ref=e148]:
+              - link "Privacy Policy" [ref=e149] [cursor=pointer]:
+                - /url: /en/legal
+          - generic [ref=e150]:
+            - link "LinkedIn" [ref=e151] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/originstamp
+              - img [ref=e152]
+            - link "Instagram" [ref=e154] [cursor=pointer]:
+              - /url: https://www.instagram.com/originstamp
+              - img [ref=e155]
+      - generic [ref=e157]:
+        - paragraph [ref=e159]: © OriginStamp. All rights reserved.
+        - link "Swiss Made Software member" [ref=e161] [cursor=pointer]:
+          - /url: https://www.swissmadesoftware.org
+          - img "Swiss Made Software" [ref=e162]
+        - generic [ref=e163]:
+          - combobox "English" [ref=e164] [cursor=pointer]:
+            - paragraph [ref=e165]: EN
+          - textbox: en
+          - img
+          - group
+  - alert [ref=e166]

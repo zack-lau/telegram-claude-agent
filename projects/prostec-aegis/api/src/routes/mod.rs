@@ -16,6 +16,7 @@ use crate::middleware::request_id::inject_request_id;
 use crate::state::AppState;
 
 mod deliveries;
+mod envelopes;
 mod health;
 mod keys;
 mod sessions;
@@ -23,6 +24,7 @@ mod sessions;
 pub fn router(state: AppState) -> Router {
     let authed = Router::new()
         .route("/deliveries/{delivery_id}", get(deliveries::get_delivery))
+        .route("/envelopes/fetch", post(envelopes::fetch_envelope))
         .route("/me/sessions", get(sessions::list_sessions))
         .route("/me/sessions/{token_id}", delete(sessions::revoke_session))
         .route("/me/keys", post(keys::register_key_bundle))

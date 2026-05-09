@@ -1,9 +1,12 @@
 # ADR 0002: Aegis Encryption Protocol
 
-**Status:** Accepted  
+**Status:** Partially superseded by ADR 0003  
 **Date:** 2026-05-08  
 **Deciders:** Zack  
 **Inputs:** Opus 4.7 cryptography review, Qwen3.6 security review, IETF research (RFC 9180, RFC 9807, draft-ietf-hpke-pq)
+
+> **Note:** Decisions D2, D3, D4, and D5 have been superseded by ADR 0003 (Unified Crypto Architecture).
+> D1, D6, D7 remain in effect. Refer to ADR 0003 for the authoritative crypto spec.
 
 ---
 
@@ -33,7 +36,7 @@ The `hpke` Rust crate (implementing RFC 9180) is the foundation. The hybrid KEM 
 
 ---
 
-### D2: Hybrid KEM — MLKEM768_P256
+### D2: Hybrid KEM — MLKEM768_P256 ⚠️ SUPERSEDED by ADR 0003 §D2
 
 **Decision:** ML-KEM-768 (FIPS 203) + P-256 ECDH (FIPS 186-5), combined per the draft-ietf-hpke-pq combiner pattern.
 
@@ -79,20 +82,24 @@ shared_secret = HKDF-SHA384(
 )
 ```
 
-**Rust crates:**
+**Rust crates (at time of writing — see ADR 0003 for current list):**
 ```toml
 ml-kem   = "0.3"    # RustCrypto, ACVP-verified, constant-time
 p256     = "0.13"   # RustCrypto, ECDH via elliptic-curve feature
 hkdf     = "0.12"
 aes-gcm  = "0.10"
-hpke     = "0.11"   # RFC 9180 outer frame; hybrid KEM plugged in as custom Kem impl
+# hpke removed — HPKE Auth mode replaced by explicit ECDSA-P256 in ADR 0003 §D4
 ```
+
+> **ADR 0003 §D2 replaces this combiner** with a SP 800-56C Rev.2 dual-PRF cascade:
+> `PRK_ec = HKDF-Extract(zeros[48], SS_ECDH); PRK_combined = HKDF-Extract(PRK_ec, SS_MLKEM);`
+> `SS = HKDF-Expand(PRK_combined, transcript, 48)`. X25519/X-Wing removed; P-256 only (FIPS).
 
 **Security review flag:** The KEM combiner transcript binding must be reviewed by a cryptographer before launch. Specifically verify: (a) info derivation includes all required terms, (b) constant-time properties preserved through the combiner, (c) KDF separation between KEM and AEAD key derivation.
 
 ---
 
-### D3: Delivery Envelope Wire Format
+### D3: Delivery Envelope Wire Format ⚠️ PARTIALLY SUPERSEDED by ADR 0003 §D3 and §D7
 
 **Decision:** Per-delivery content key (`K_content`) wrapped separately per recipient. One `body` AEAD. All components cryptographically bound.
 
@@ -114,7 +121,8 @@ DeliveryEnvelope {
             recipient_id:    [u8; 16],     // recipient UUID
             recipient_key_id: [u8; 16],    // which recipient keypair was used
             encap:           [u8; 1121],   // HPKE encapsulation output (KEM ciphertext)
-            wrapped_key:     [u8; 48],     // HPKE.SealAuth(K_content) → 32B key + 16B AEAD tag
+            wrapped_key:     [u8; 40],     // AES-256-KWP(K_content) → 8B ICV + 32B (ADR 0003 §D3)
+            // Note: ADR 0002 had [u8; 48] with AES-GCM. Changed to KWP in ADR 0003.
         }
     ],
 
@@ -140,7 +148,7 @@ DeliveryEnvelope {
 
 ---
 
-### D4: Sender Authentication — HPKE Auth Mode
+### D4: Sender Authentication — HPKE Auth Mode ⚠️ SUPERSEDED by ADR 0003 §D4
 
 **Decision:** Use HPKE `mode_auth` for sender binding. Transport-layer API key auth is necessary but not sufficient.
 
@@ -152,11 +160,11 @@ For Aegis's core value proposition ("AI work product addressed to human"), the r
 
 **Anonymous deliveries:** For one-time or anonymous sender use cases, allow `mode_base` with `sender_authenticated: false` flag in the envelope. Recipients see a clear UI indicator.
 
-**Separate Ed25519 signature (Qwen alternative):** NOT adopted. HPKE Auth mode provides sender binding as part of the AEAD — adding a separate Ed25519 signature would be redundant code, an additional primitive to implement and audit, and introduces the "sign-then-encrypt vs encrypt-then-sign" ordering question unnecessarily. HPKE Auth handles it correctly by construction.
+**Separate Ed25519 signature (Qwen alternative):** NOT adopted in ADR 0002. However, **ADR 0003 §D4 supersedes this decision**: HPKE Auth was replaced with an explicit ECDSA-P256 signature due to a Key Compromise Impersonation (KCI) vulnerability in HPKE Auth mode (RFC 9180 §9.1 — recipient key compromise allows forgery from any sender). ECDSA-P256 is KCI-resistant. The `hpke` crate was removed from the project.
 
 ---
 
-### D5: Private Key Storage — OPAQUE-Wrapped Server-Side Blob
+### D5: Private Key Storage — OPAQUE-Wrapped Server-Side Blob ⚠️ SUPERSEDED by ADR 0003 §D5
 
 **Decision:** Recipient private keys are generated client-side and stored server-side as AES-256-GCM blobs encrypted under an OPAQUE-derived key. Server never sees the password or the plaintext private key.
 
@@ -202,9 +210,9 @@ enc_sk_recovery = AES-256-GCM(k_recovery, sk_id || pk_id, aad="aegis-v1-recovery
 
 **Qwen additions applied:** Enforce 12+ character password at client. OPAQUE provides offline-attack resistance (server can't precompute), but weak passwords still vulnerable post-server-breach. Rate-limit OPAQUE login attempts server-side. Account lockout after N failed attempts.
 
-**Rust crate:** `opaque-ke` (Meta/Novi, Ristretto255-SHA-512 suite) — reference implementation of RFC 9807.
+**Rust crate:** ~~`opaque-ke` (Meta/Novi, Ristretto255-SHA-512 suite)~~ — superseded. ADR 0003 §D5 specifies `opaque-ke = "2"` with the `OPAQUE-P256-HKDF-SHA256` cipher suite (P-256 group, all primitives FIPS-approved). Ristretto255 uses Curve25519 which is not FIPS-approved. `opaque-ke` is currently not in Cargo.toml pending dependency resolution.
 
-**Note on FIPS:** OPAQUE is authentication, not data-protection. The data at rest is protected by AES-256-GCM + HKDF-SHA384 (FIPS-compliant). Document this distinction in compliance materials.
+**Note on FIPS:** OPAQUE applies to web clients only. Mobile clients use platform hardware (iOS Secure Enclave / Android StrongBox) — no OPAQUE needed. See ADR 0003 §D5 for the full platform breakdown.
 
 ---
 

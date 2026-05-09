@@ -1,0 +1,119 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e3] [cursor=pointer]:
+    - /url: "#main"
+  - generic [ref=e7]:
+    - generic [ref=e9]:
+      - generic:
+        - generic:
+          - generic:
+            - button "Open sidebar":
+              - img
+        - generic:
+          - generic:
+            - link "New chat":
+              - /url: /
+              - generic:
+                - img
+              - generic: New chat
+          - generic:
+            - button "Search chats":
+              - generic:
+                - img
+              - generic: Search chats
+          - generic:
+            - link "Images":
+              - /url: /images
+              - generic:
+                - img
+              - generic: Images
+          - generic:
+            - link "Library":
+              - /url: /library
+              - generic:
+                - img
+              - generic: Library
+        - generic:
+          - generic:
+            - button "Open profile menu"
+      - generic [ref=e10]:
+        - heading "Chat history" [level=2] [ref=e11]
+        - navigation "Chat history" [ref=e12]:
+          - generic [ref=e15]:
+            - link "Home" [ref=e16] [cursor=pointer]:
+              - /url: /
+              - img [ref=e17]
+            - button "Close sidebar" [expanded] [ref=e20]:
+              - img [ref=e21]
+          - complementary [ref=e23]:
+            - list [ref=e24]:
+              - listitem [ref=e25]:
+                - link "New chat Shift Command O" [ref=e26] [cursor=pointer]:
+                  - /url: /
+                  - generic [ref=e27]:
+                    - img [ref=e29]
+                    - generic [ref=e32]: New chat
+                  - generic [ref=e34]:
+                    - generic "Shift" [ref=e35]:
+                      - generic [ref=e36]: ⇧
+                    - generic "Command" [ref=e37]:
+                      - generic [ref=e38]: ⌘
+                    - generic [ref=e40]: O
+              - listitem [ref=e41]:
+                - button "Search chats Command K" [ref=e42] [cursor=pointer]:
+                  - generic [ref=e43]:
+                    - img [ref=e45]
+                    - generic [ref=e48]: Search chats
+                  - generic [ref=e50]:
+                    - generic "Command" [ref=e51]:
+                      - generic [ref=e52]: ⌘
+                    - generic [ref=e54]: K
+          - link "Images" [ref=e55] [cursor=pointer]:
+            - /url: /images
+            - img [ref=e57]
+            - generic [ref=e60]: Images
+          - link "Library" [ref=e61] [cursor=pointer]:
+            - /url: /library
+            - img [ref=e63]
+            - generic [ref=e66]: Library
+          - generic [ref=e67]:
+            - link "Apps" [ref=e68] [cursor=pointer]:
+              - /url: /apps
+              - img [ref=e70]
+              - generic [ref=e73]: Apps
+            - link "Codex" [ref=e74] [cursor=pointer]:
+              - /url: /codex
+              - generic [ref=e75]:
+                - img [ref=e77]
+                - generic [ref=e80]: Codex
+              - img [ref=e82]
+          - button "Zack, open profile menu" [ref=e87] [cursor=pointer]:
+            - generic [ref=e92]: Zack
+    - generic [ref=e97]:
+      - banner:
+        - button "Model selector" [ref=e99] [cursor=pointer]:
+          - generic [ref=e100]: ChatGPT
+          - img [ref=e101]
+        - generic [ref=e106]:
+          - button "Start a group chat" [ref=e107] [cursor=pointer]:
+            - img [ref=e108]
+          - button "Turn on temporary chat" [ref=e111] [cursor=pointer]:
+            - img [ref=e112]
+      - main [ref=e114]:
+        - generic [ref=e115]:
+          - heading "Ready when you are." [level=1] [ref=e123]:
+            - generic [ref=e124]: Ready when you are.
+          - generic [ref=e129]:
+            - generic [ref=e133]:
+              - button "Add files and more" [ref=e136] [cursor=pointer]:
+                - img
+              - textbox "Chat with ChatGPT" [active] [ref=e139]:
+                - paragraph [ref=e140]: Ask anything
+              - generic [ref=e142]:
+                - button "Start dictation" [ref=e144] [cursor=pointer]:
+                  - img
+                - button "Send prompt" [disabled] [ref=e147]:
+                  - img [ref=e148]
+            - button [ref=e150]
+            - button [ref=e151]
+  - alert [ref=e156]
+  - status [ref=e157]

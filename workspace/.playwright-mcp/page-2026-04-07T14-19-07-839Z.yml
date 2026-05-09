@@ -1,0 +1,15 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - img "ChatGPT" [ref=e5]
+    - heading "Check your inbox" [level=1] [ref=e14]
+    - generic [ref=e15]: Enter the verification code we just sent to zack@lzac.cc
+  - group [ref=e16]:
+    - form "Check your inbox" [ref=e17]:
+      - generic [ref=e21]:
+        - generic:
+          - generic:
+            - generic: Code
+        - textbox "Code" [active] [ref=e22]
+      - generic [ref=e25]:
+        - button "Continue" [ref=e27] [cursor=pointer]
+        - button "Resend email" [ref=e29] [cursor=pointer]

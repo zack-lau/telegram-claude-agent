@@ -87,7 +87,7 @@ fn push_lv(buf: &mut Vec<u8>, data: &[u8]) {
 mod tests {
     use super::*;
     use ed25519_dalek::SigningKey as Ed25519SigningKey;
-    use rand::rngs::OsRng;
+    use rand::{RngCore, rngs::OsRng};
 
     fn make_bundle(recipient_id: Uuid) -> KeyBundle {
         KeyBundle {
@@ -99,10 +99,15 @@ mod tests {
         }
     }
 
+    fn make_signing_key() -> Ed25519SigningKey {
+        let mut secret = [0u8; 32];
+        OsRng.fill_bytes(&mut secret);
+        Ed25519SigningKey::from_bytes(&secret)
+    }
+
     #[test]
     fn sign_and_verify() {
-        let mut csprng = OsRng;
-        let sk = Ed25519SigningKey::generate(&mut csprng);
+        let sk = make_signing_key();
         let vk = sk.verifying_key();
         let bundle = make_bundle(Uuid::new_v4());
         let signed = KeyBundleSigned::sign(bundle, &sk, "aegis-ca-v1").unwrap();
@@ -111,8 +116,7 @@ mod tests {
 
     #[test]
     fn tampered_bundle_fails_verify() {
-        let mut csprng = OsRng;
-        let sk = Ed25519SigningKey::generate(&mut csprng);
+        let sk = make_signing_key();
         let vk = sk.verifying_key();
         let bundle = make_bundle(Uuid::new_v4());
         let mut signed = KeyBundleSigned::sign(bundle, &sk, "aegis-ca-v1").unwrap();
@@ -122,8 +126,7 @@ mod tests {
 
     #[test]
     fn expired_bundle_fails_verify() {
-        let mut csprng = OsRng;
-        let sk = Ed25519SigningKey::generate(&mut csprng);
+        let sk = make_signing_key();
         let vk = sk.verifying_key();
         let mut bundle = make_bundle(Uuid::new_v4());
         bundle.expires_at = Utc::now() - chrono::Duration::seconds(1);

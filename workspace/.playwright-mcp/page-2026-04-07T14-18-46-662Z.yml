@@ -1,0 +1,132 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e3] [cursor=pointer]:
+    - /url: "#main"
+  - generic [ref=e7]:
+    - generic [ref=e9]:
+      - generic:
+        - generic:
+          - generic:
+            - button "Open sidebar":
+              - img
+        - generic:
+          - generic:
+            - link "New chat":
+              - /url: /
+              - generic:
+                - img
+              - generic: New chat
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic: Search chats
+          - generic:
+            - link "Images":
+              - /url: /images
+              - generic:
+                - img
+              - generic: Images
+      - generic [ref=e10]:
+        - heading "Chat history" [level=2] [ref=e11]
+        - navigation "Chat history" [ref=e12]:
+          - generic [ref=e15]:
+            - link "Home" [ref=e16] [cursor=pointer]:
+              - /url: /
+              - img [ref=e17]
+            - button "Close sidebar" [expanded] [ref=e20]:
+              - img [ref=e21]
+          - complementary [ref=e23]:
+            - list [ref=e24]:
+              - listitem [ref=e25]:
+                - link "New chat Shift Command O" [ref=e26] [cursor=pointer]:
+                  - /url: /
+                  - generic [ref=e27]:
+                    - img [ref=e29]
+                    - generic [ref=e32]: New chat
+                  - generic [ref=e34]:
+                    - generic "Shift" [ref=e35]:
+                      - generic [ref=e36]: ⇧
+                    - generic "Command" [ref=e37]:
+                      - generic [ref=e38]: ⌘
+                    - generic [ref=e40]: O
+              - listitem [ref=e41]:
+                - generic [ref=e42] [cursor=pointer]:
+                  - generic [ref=e43]:
+                    - img [ref=e45]
+                    - generic [ref=e48]: Search chats
+                  - generic [ref=e50]:
+                    - generic "Command" [ref=e51]:
+                      - generic [ref=e52]: ⌘
+                    - generic [ref=e54]: K
+          - link "Images" [ref=e55] [cursor=pointer]:
+            - /url: /images
+            - img [ref=e57]
+            - generic [ref=e60]: Images
+          - generic [ref=e61]:
+            - link "Apps" [ref=e62] [cursor=pointer]:
+              - /url: /apps
+              - img [ref=e64]
+              - generic [ref=e67]: Apps
+            - generic [ref=e68] [cursor=pointer]:
+              - img [ref=e70]
+              - generic [ref=e73]: Deep research
+            - generic [ref=e74] [cursor=pointer]:
+              - img [ref=e76]
+              - generic [ref=e79]: Health
+          - generic [ref=e81]:
+            - link "See plans and pricing" [ref=e82] [cursor=pointer]:
+              - /url: https://openai.com/chatgpt/pricing/
+              - generic [ref=e83]:
+                - img [ref=e85]
+                - text: See plans and pricing
+              - img [ref=e88]
+            - generic [ref=e90] [cursor=pointer]:
+              - img [ref=e92]
+              - text: Settings
+            - generic [ref=e94] [cursor=pointer]:
+              - generic [ref=e95]:
+                - img [ref=e97]
+                - generic [ref=e100]: Help
+              - img [ref=e102]
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - paragraph [ref=e106]: Get responses tailored to you
+              - paragraph [ref=e107]: Log in to get answers based on saved chats, plus create images and upload files.
+            - button "Log in" [ref=e109] [cursor=pointer]:
+              - generic [ref=e110]: Log in
+    - generic [ref=e112]:
+      - banner:
+        - button "Model selector" [ref=e114] [cursor=pointer]:
+          - generic [ref=e115]: ChatGPT
+          - img [ref=e116]
+        - generic [ref=e122]:
+          - button "Log in" [ref=e123] [cursor=pointer]:
+            - generic [ref=e125]: Log in
+          - button "Sign up for free" [ref=e126] [cursor=pointer]:
+            - generic [ref=e127]: Sign up for free
+      - main [ref=e128]:
+        - generic [ref=e129]:
+          - heading "What’s on your mind today?" [level=1] [ref=e137]:
+            - generic [ref=e138]: What’s on your mind today?
+          - generic [ref=e139]:
+            - generic [ref=e143]:
+              - generic [ref=e147]:
+                - button "Add files and more" [ref=e150] [cursor=pointer]:
+                  - img
+                - textbox "Chat with ChatGPT" [ref=e177]:
+                  - paragraph [ref=e178]: Ask anything
+                - button "Start Voice" [ref=e159] [cursor=pointer]:
+                  - img [ref=e161]
+                  - generic [ref=e163]: Voice
+              - button [ref=e164]
+              - button [ref=e165]
+            - generic [ref=e172]:
+              - text: By messaging ChatGPT, an AI chatbot, you agree to our
+              - link "Terms" [ref=e173] [cursor=pointer]:
+                - /url: https://openai.com/terms
+              - text: and have read our
+              - link "Privacy Policy" [ref=e174] [cursor=pointer]:
+                - /url: https://openai.com/privacy
+              - text: . See Cookie Preferences.
+  - alert [ref=e175]
+  - status [ref=e176]

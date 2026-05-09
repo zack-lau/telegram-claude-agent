@@ -1,0 +1,28 @@
+[      56ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://originstamp.com/en/timestamp/resources/demo:0
+[     374ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rZ (https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:36741)
+    at rJ (https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:37774)
+    at https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:132303
+    at sy (https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:137465)
+    at sh (https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:128713)
+    at https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:123538
+    at sr (https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:123639)
+    at sq (https://originstamp.com/_next/static/chunks/d5850543-80d52f85778c1e71.js:1:150209)
+    at MessagePort.A (https://originstamp.com/_next/static/chunks/470-43d9f2961cb00ba3.js:32:61413)
+[     491ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://www.gstatic.com/recaptcha/releases/dNfi_jsbkQb4Hbw7F1b82Uia/recaptcha__en.js:469
+[     498ms] [ERROR] Framing 'https://www.google.com/' violates the following report-only Content Security Policy directive: "frame-src https://www.youtube.com https://www.youtube-nocookie.com". The violation has been logged, but no further action has been taken.
+ @ https://www.gstatic.com/:0
+[     533ms] [ERROR] Framing 'https://www.google.com/' violates the following report-only Content Security Policy directive: "frame-src https://www.youtube.com https://www.youtube-nocookie.com". The violation has been logged, but no further action has been taken.
+ @ https://www.gstatic.com/:0
+[     741ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://www.gstatic.com/recaptcha/releases/dNfi_jsbkQb4Hbw7F1b82Uia/recaptcha__en.js:413
+[     741ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://www.gstatic.com/recaptcha/releases/dNfi_jsbkQb4Hbw7F1b82Uia/recaptcha__en.js:413
+[     887ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://www.gstatic.com/recaptcha/releases/dNfi_jsbkQb4Hbw7F1b82Uia/recaptcha__en.js:509
+[     888ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://www.gstatic.com/recaptcha/releases/dNfi_jsbkQb4Hbw7F1b82Uia/recaptcha__en.js:509
+[    5882ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://consent.cookiebot.com/uc.js:1
+[    5883ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://consent.cookiebot.com/uc.js:1
+[    5893ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://consent.cookiebot.com/uc.js:1
+[    5893ms] [ERROR] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy. @ https://consent.cookiebot.com/uc.js:1
+[    5900ms] [ERROR] Framing 'https://consentcdn.cookiebot.com/' violates the following report-only Content Security Policy directive: "frame-src https://www.youtube.com https://www.youtube-nocookie.com". The violation has been logged, but no further action has been taken.
+ @ https://consent.cookiebot.com/:0
+[    5923ms] [ERROR] Framing 'https://consentcdn.cookiebot.com/' violates the following report-only Content Security Policy directive: "frame-src https://www.youtube.com https://www.youtube-nocookie.com". The violation has been logged, but no further action has been taken.
+ @ https://consent.cookiebot.com/:0

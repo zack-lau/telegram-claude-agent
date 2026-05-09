@@ -1,0 +1,114 @@
+- generic [active] [ref=e1]:
+  - navigation "Product navigation" [ref=e2]:
+    - generic [ref=e4]:
+      - link "OriginVault E-Archive" [ref=e5] [cursor=pointer]:
+        - /url: /en/originvault
+        - generic [ref=e7]: OriginVault
+        - generic [ref=e8]: E-Archive
+      - link "OriginStamp Timestamp" [ref=e9] [cursor=pointer]:
+        - /url: /en/timestamp
+        - generic [ref=e11]: OriginStamp
+        - generic [ref=e12]: Timestamp
+  - main [ref=e13]:
+    - generic [ref=e17]:
+      - link "OriginStamp Logo" [ref=e19] [cursor=pointer]:
+        - /url: /en/timestamp
+        - img "OriginStamp Logo" [ref=e21]
+      - navigation "Main navigation" [ref=e22]:
+        - button "Applications" [ref=e24] [cursor=pointer]
+        - button "Industries" [ref=e26] [cursor=pointer]
+        - button "Resources" [ref=e28] [cursor=pointer]
+      - link "Try Free" [ref=e30] [cursor=pointer]:
+        - /url: /en/timestamp/resources/demo
+    - generic [ref=e37]:
+      - generic [ref=e39]:
+        - heading "Verify or Create Blockchain Proof" [level=1] [ref=e40]
+        - paragraph [ref=e41]: Upload any file to verify an existing blockchain timestamp or create a new one. Your file never leaves your device. The proof lives on Bitcoin and Ethereum, forever.
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading [level=2]
+        - generic [ref=e49] [cursor=pointer]:
+          - button "Select File & Create Proof" [ref=e50]
+          - img [ref=e51]
+          - paragraph [ref=e53]: Select File & Create Proof
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - heading "Why This Proof Matters" [level=2] [ref=e61]
+        - generic [ref=e63]:
+          - generic [ref=e67]:
+            - paragraph [ref=e68]: Tamper-Evident by Math
+            - paragraph [ref=e69]: Your file gets a SHA-256 hash anchored on the blockchain. Any change, no matter how small, invalidates the proof. No trust required, just math.
+          - generic [ref=e73]:
+            - paragraph [ref=e74]: Independent of Any Provider
+            - paragraph [ref=e75]: The proof exists on Bitcoin and Ethereum. Even if OriginStamp disappears, your timestamp remains verifiable. No vendor lock-in, ever.
+          - generic [ref=e79]:
+            - paragraph [ref=e80]: Recognized Worldwide
+            - paragraph [ref=e81]: Courts, auditors, and compliance teams accept blockchain timestamps as evidence. Over 60 million proofs created since 2013.
+      - img "A blocky, abstract purple shape with a central hole." [ref=e84]
+    - img "Artistic purple pattern" [ref=e119]
+    - img "Abstract orange logo of six connected, rounded squares." [ref=e133]
+  - contentinfo [ref=e135]:
+    - generic [ref=e137]:
+      - generic [ref=e138]:
+        - generic [ref=e139]:
+          - paragraph [ref=e140]: Efficiency that inspires – OriginStamp.
+          - paragraph [ref=e141]: The high-performance white-label archive for SaaS providers. Unlock new markets, achieve compliance in record time, and create outstanding customer experiences.
+        - generic [ref=e142]:
+          - paragraph [ref=e143]: Products & Services
+          - list [ref=e144]:
+            - listitem [ref=e145]:
+              - link "OriginVault" [ref=e146] [cursor=pointer]:
+                - /url: /en/originvault
+            - listitem [ref=e147]:
+              - link "OriginStamp" [ref=e148] [cursor=pointer]:
+                - /url: /en/timestamp
+            - listitem [ref=e149]:
+              - link "Enterprise Solutions" [ref=e150] [cursor=pointer]:
+                - /url: /en/solutions/custom
+            - listitem [ref=e151]:
+              - link "AI Analytics" [ref=e152] [cursor=pointer]:
+                - /url: /en/services/ai-analytics
+            - listitem [ref=e153]:
+              - link "MS 365 Consulting" [ref=e154] [cursor=pointer]:
+                - /url: /en/services/m365
+        - generic [ref=e155]:
+          - paragraph [ref=e156]: Company
+          - list [ref=e157]:
+            - listitem [ref=e158]:
+              - link "Blog" [ref=e159] [cursor=pointer]:
+                - /url: /en/blog
+            - listitem [ref=e160]:
+              - link "About Us" [ref=e161] [cursor=pointer]:
+                - /url: /en/about
+            - listitem [ref=e162]:
+              - link "Sustainability" [ref=e163] [cursor=pointer]:
+                - /url: /en/about/sustainability
+            - listitem [ref=e164]:
+              - link "Career" [ref=e165] [cursor=pointer]:
+                - /url: /en/about/career
+            - listitem [ref=e166]:
+              - link "Privacy Policy" [ref=e167] [cursor=pointer]:
+                - /url: /en/legal
+          - generic [ref=e168]:
+            - link "LinkedIn" [ref=e169] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/originstamp
+              - img [ref=e170]
+            - link "Instagram" [ref=e172] [cursor=pointer]:
+              - /url: https://www.instagram.com/originstamp
+              - img [ref=e173]
+      - generic [ref=e175]:
+        - paragraph [ref=e177]: © OriginStamp. All rights reserved.
+        - link "Swiss Made Software member" [ref=e179] [cursor=pointer]:
+          - /url: https://www.swissmadesoftware.org
+          - img "Swiss Made Software" [ref=e180]
+        - generic [ref=e181]:
+          - combobox "English" [ref=e182] [cursor=pointer]:
+            - paragraph [ref=e183]: EN
+          - textbox: en
+          - img
+          - group
+  - alert [ref=e184]
+  - iframe [ref=e187]:
+    - generic [ref=f9e6]:
+      - text: protected by
+      - strong [ref=f9e7]: reCAPTCHA

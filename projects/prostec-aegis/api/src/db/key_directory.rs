@@ -2,7 +2,7 @@ use anyhow::Result;
 use aws_sdk_dynamodb::{types::AttributeValue, Client as DdbClient};
 use uuid::Uuid;
 
-use crate::models::key_directory::{KeyDirectoryRecord, KeyBundleResponse};
+use crate::models::key_directory::KeyDirectoryRecord;
 
 pub struct KeyDirectoryStore<'a> {
     ddb: &'a DdbClient,
@@ -32,8 +32,9 @@ impl<'a> KeyDirectoryStore<'a> {
 
         let record = KeyDirectoryRecord {
             recipient_id,
-            kem_pk_b64: item.get("kem_pk").and_then(|v| v.as_s().ok()).unwrap_or("").to_owned(),
-            ec_pk_b64: item.get("ec_pk").and_then(|v| v.as_s().ok()).unwrap_or("").to_owned(),
+            kem_pk_b64: item.get("kem_pk").and_then(|v| v.as_s().ok()).cloned().unwrap_or_default(),
+            ec_pk_b64: item.get("ec_pk").and_then(|v| v.as_s().ok()).cloned().unwrap_or_default(),
+            ecdsa_pk_b64: item.get("ecdsa_pk").and_then(|v| v.as_s().ok()).cloned(),
             key_version: item.get("key_version")
                 .and_then(|v| v.as_n().ok())
                 .and_then(|n| n.parse().ok())
@@ -43,10 +44,10 @@ impl<'a> KeyDirectoryStore<'a> {
                 .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
                 .map(|d| d.with_timezone(&chrono::Utc))
                 .unwrap_or_default(),
-            signature_b64: item.get("signature").and_then(|v| v.as_s().ok()).unwrap_or("").to_owned(),
-            signer_key_id: item.get("signer_key_id").and_then(|v| v.as_s().ok()).unwrap_or("").to_owned(),
-            enc_sk_b64: item.get("enc_sk").and_then(|v| v.as_s().ok()).unwrap_or("").to_owned(),
-            enc_sk_recovery_b64: item.get("enc_sk_recovery").and_then(|v| v.as_s().ok()).map(|s| s.to_owned()),
+            signature_b64: item.get("signature").and_then(|v| v.as_s().ok()).cloned().unwrap_or_default(),
+            signer_key_id: item.get("signer_key_id").and_then(|v| v.as_s().ok()).cloned().unwrap_or_default(),
+            enc_sk_b64: item.get("enc_sk").and_then(|v| v.as_s().ok()).cloned().unwrap_or_default(),
+            enc_sk_recovery_b64: item.get("enc_sk_recovery").and_then(|v| v.as_s().ok()).cloned(),
             created_at: item.get("created_at")
                 .and_then(|v| v.as_s().ok())
                 .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
@@ -70,6 +71,10 @@ impl<'a> KeyDirectoryStore<'a> {
             .item("signer_key_id", AttributeValue::S(record.signer_key_id.clone()))
             .item("enc_sk", AttributeValue::S(record.enc_sk_b64.clone()))
             .item("created_at", AttributeValue::S(record.created_at.to_rfc3339()));
+
+        if let Some(ref ecdsa_pk) = record.ecdsa_pk_b64 {
+            builder = builder.item("ecdsa_pk", AttributeValue::S(ecdsa_pk.clone()));
+        }
 
         if let Some(ref recovery) = record.enc_sk_recovery_b64 {
             builder = builder.item("enc_sk_recovery", AttributeValue::S(recovery.clone()));
