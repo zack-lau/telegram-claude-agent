@@ -33,7 +33,11 @@ BASE_URL = os.environ.get("OPENAI_BASE_URL", "http://localhost:8000/v1")
 MODEL = "qwen3.6"
 MAX_FILE_BYTES = 512 * 1024
 MAX_TOKENS = 32000  # thinking tokens count against budget; 32K gives room for both reasoning + review
-TIMEOUT = 600
+# 1800s (30 min) — dense bundles (e.g. 60 KB of crypto code) make Qwen3.6-thinking
+# generate ~13K reasoning tokens at ~33 tok/s (≈ 7 min solo). Under concurrent batching
+# per-sequence throughput drops; 600s used to time out the last-in-batch request
+# while vLLM was still actively generating. 1800s gives ~5× headroom over solo-time.
+TIMEOUT = 1800
 
 SYSTEM_PROMPT = """\
 You are conducting a fresh adversarial review. Play TWO roles simultaneously and be ruthlessly honest:
