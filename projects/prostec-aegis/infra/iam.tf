@@ -21,12 +21,17 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
   name = "read-app-config-secret"
   role = aws_iam_role.ecs_execution.id
 
+  # Fix M11: also allow reading the OAuth client credential secrets
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = ["secretsmanager:GetSecretValue"]
-      Resource = [aws_secretsmanager_secret.app_config.arn]
+      Effect = "Allow"
+      Action = ["secretsmanager:GetSecretValue"]
+      Resource = [
+        aws_secretsmanager_secret.app_config.arn,
+        aws_secretsmanager_secret.google_oauth_client.arn,
+        aws_secretsmanager_secret.microsoft_oauth_client.arn,
+      ]
     }]
   })
 }
@@ -45,29 +50,66 @@ resource "aws_iam_role" "ecs_task" {
   })
 }
 
+# Fix C9: DeleteItem removed from the broad allow list.
+# Fix C2: sessions, deliveries, recipient-settings, and oauth-cloud-tokens ARNs added.
+# Fix N3: sessions table gets DeleteItem explicitly — required for revoke_session/revoke_all.
 resource "aws_iam_role_policy" "ecs_task_dynamodb" {
   name = "dynamodb-crud"
   role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:UpdateItem",
-        "dynamodb:DeleteItem",
-        "dynamodb:Query",
-      ]
-      Resource = [
-        aws_dynamodb_table.key_directory.arn,
-        aws_dynamodb_table.api_keys.arn,
-        "${aws_dynamodb_table.api_keys.arn}/index/*",
-        aws_dynamodb_table.revocations.arn,
-        aws_dynamodb_table.oauth_tokens.arn,
-      ]
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query",
+        ]
+        Resource = [
+          aws_dynamodb_table.key_directory.arn,
+          aws_dynamodb_table.api_keys.arn,
+          "${aws_dynamodb_table.api_keys.arn}/index/*",
+          aws_dynamodb_table.revocations.arn,
+          aws_dynamodb_table.oauth_cloud_tokens.arn,
+          "${aws_dynamodb_table.oauth_cloud_tokens.arn}/index/*",
+          aws_dynamodb_table.sessions.arn,
+          "${aws_dynamodb_table.sessions.arn}/index/*",
+          aws_dynamodb_table.deliveries.arn,
+          "${aws_dynamodb_table.deliveries.arn}/index/*",
+          aws_dynamodb_table.recipient_settings.arn,
+          aws_dynamodb_table.streaming_uploads.arn,
+        ]
+      },
+      # Sessions need DeleteItem for revoke_session/revoke_all.
+      # oauth_cloud_tokens needs DeleteItem for token revocation.
+      # deliveries needs DeleteItem for burn-after-read cleanup.
+      # streaming_uploads needs DeleteItem for abort + after complete (TTL handles orphans).
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:DeleteItem"]
+        Resource = [
+          aws_dynamodb_table.sessions.arn,
+          aws_dynamodb_table.oauth_cloud_tokens.arn,
+          aws_dynamodb_table.deliveries.arn,
+          aws_dynamodb_table.streaming_uploads.arn,
+        ]
+      },
+      # Fix C9: explicit Deny for destructive ops on audit_logs (append-only).
+      {
+        Effect = "Deny"
+        Action = [
+          "dynamodb:DeleteItem",
+          "dynamodb:BatchWriteItem",
+        ]
+        Resource = [
+          aws_dynamodb_table.audit_logs.arn,
+          "${aws_dynamodb_table.audit_logs.arn}/index/*",
+        ]
+      }
+    ]
   })
 }
 
@@ -107,6 +149,8 @@ resource "aws_iam_role_policy" "ecs_task_audit_logs" {
   })
 }
 
+# Fix H3: added kms:Encrypt alongside GenerateDataKey and Decrypt.
+# Fix M8: scoped Resource to specific KMS key ARN instead of "*".
 resource "aws_iam_role_policy" "ecs_task_kms_oauth" {
   name = "kms-oauth-tokens"
   role = aws_iam_role.ecs_task.id
@@ -115,7 +159,7 @@ resource "aws_iam_role_policy" "ecs_task_kms_oauth" {
     Version = "2012-10-17"
     Statement = [{
       Effect   = "Allow"
-      Action   = ["kms:GenerateDataKey", "kms:Decrypt"]
+      Action   = ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt"]
       Resource = [aws_kms_key.oauth_tokens.arn]
     }]
   })

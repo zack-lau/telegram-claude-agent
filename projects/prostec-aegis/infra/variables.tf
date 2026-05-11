@@ -41,3 +41,25 @@ variable "alarm_sns_arn" {
   type        = string
   default     = ""
 }
+
+variable "task_cpu" {
+  description = "ECS task CPU units (256=0.25vCPU, 512=0.5vCPU, 1024=1vCPU)"
+  type        = number
+  default     = 512
+
+  validation {
+    condition     = contains([256, 512, 1024, 2048, 4096], var.task_cpu)
+    error_message = "task_cpu must be a valid Fargate CPU value"
+  }
+}
+
+variable "task_memory" {
+  description = "ECS task memory in MiB (min 512; must be compatible with task_cpu)"
+  type        = number
+  default     = 1024
+
+  validation {
+    condition     = var.task_memory >= 512
+    error_message = "task_memory must be at least 512 MiB"
+  }
+}

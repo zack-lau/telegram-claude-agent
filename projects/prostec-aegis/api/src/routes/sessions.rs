@@ -28,17 +28,17 @@ pub async fn revoke_session(
     Extension(user): Extension<AuthenticatedUser>,
     Path(token_id): Path<Uuid>,
 ) -> ApiResult<StatusCode> {
-    // Delete the specific session row. Only the owning recipient can do this.
-    state.ddb()
-        .delete_item()
-        .table_name(state.cfg().table("oauth-tokens"))
-        .key("recipient_id", aws_sdk_dynamodb::types::AttributeValue::S(user.recipient_id.to_string()))
-        .key("token_id", aws_sdk_dynamodb::types::AttributeValue::S(token_id.to_string()))
-        .condition_expression("recipient_id = :rid")
-        .expression_attribute_values(":rid", aws_sdk_dynamodb::types::AttributeValue::S(user.recipient_id.to_string()))
-        .send()
+    // Delete the specific session row AND decrement the counter, atomically.
+    // Only the owning recipient can do this (the recipient_id key partition is implicit
+    // via the authenticated user's recipient_id).
+    let store = SessionStore::new(state.ddb(), &state.cfg().dynamodb_table_prefix);
+    let deleted = store
+        .delete_session_atomic(user.recipient_id, &token_id.to_string())
         .await
         .map_err(|e| ApiError::Internal(anyhow::anyhow!("delete session error: {}", e)))?;
-
-    Ok(StatusCode::NO_CONTENT)
+    if deleted {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err(ApiError::NotFound)
+    }
 }

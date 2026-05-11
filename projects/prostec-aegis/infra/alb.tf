@@ -18,14 +18,15 @@ resource "aws_lb" "main" {
 
 resource "aws_lb_target_group" "api" {
   name        = "${local.name_prefix}-api-tg"
-  port        = 80
+  # Fix H4: port corrected from 80 to 8080 to match container port
+  port        = 8080
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
 
   health_check {
-    # Placeholder: nginx serves 200 on /. Change to /health when Aegis API image is deployed.
-    path                = "/"
+    # Fix H4: path corrected from / to /health; matcher explicitly set to 200
+    path                = "/health"
     healthy_threshold   = 2
     unhealthy_threshold = 3
     interval            = 30

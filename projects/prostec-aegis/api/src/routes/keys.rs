@@ -1,9 +1,9 @@
+use aws_lc_rs::digest::{Context as DigestContext, SHA256};
 use axum::{
     extract::{Extension, Path, State},
     http::StatusCode,
     Json,
 };
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use uuid::Uuid;
 
 use crate::db::key_directory::KeyDirectoryStore;
@@ -12,104 +12,107 @@ use crate::middleware::auth::AuthenticatedUser;
 use crate::models::key_directory::{KeyBundleResponse, KeyDirectoryRecord, RegisterKeyBundleRequest};
 use crate::state::AppState;
 
-/// GET /keys/{recipient_id} — anyone can fetch a recipient's public key bundle.
-/// Senders (AI agents) call this to encapsulate deliveries.
-/// Verifies the bundle signature before returning.
+/// GET /keys/{recipient_id} — anyone can fetch a recipient's signed key bundle.
+/// Senders verify the bundle against the pinned AIK fingerprint (out-of-band).
 pub async fn get_key_bundle(
     State(state): State<AppState>,
     Path(recipient_id): Path<Uuid>,
 ) -> ApiResult<Json<KeyBundleResponse>> {
     let store = KeyDirectoryStore::new(state.ddb(), &state.cfg().dynamodb_table_prefix);
     let record = store.get(recipient_id).await.map_err(ApiError::Internal)?;
-
     let record = record.ok_or(ApiError::NotFound)?;
 
-    if record.expires_at < chrono::Utc::now() {
+    if record.bundle_expiry < chrono::Utc::now() {
         return Err(ApiError::NotFound);
     }
 
+    let signed_bundle = record
+        .parse_signed_bundle()
+        .map_err(|e| ApiError::Internal(anyhow::anyhow!("corrupt signed_bundle_json: {}", e)))?;
+
     Ok(Json(KeyBundleResponse {
         recipient_id,
-        kem_pk_b64: record.kem_pk_b64,
-        ec_pk_b64: record.ec_pk_b64,
-        ecdsa_pk_b64: record.ecdsa_pk_b64,
-        version: record.key_version,
-        expires_at: record.expires_at,
-        signature_b64: record.signature_b64,
-        signer_key_id: record.signer_key_id,
+        aik_fingerprint_hex: record.aik_fingerprint_hex,
+        bundle_version: record.bundle_version,
+        bundle_expiry: record.bundle_expiry,
+        signed_bundle,
     }))
 }
 
-/// POST /me/keys — recipient registers or rotates their key bundle.
-/// Client has already completed OPAQUE registration and provides enc_sk.
-/// Server signs the public key bundle with the Aegis CA key.
+/// POST /me/keys — recipient registers or rotates their AIK-signed key bundle.
 ///
-/// TODO: integrate OPAQUE server-side registration_finish() once opaque-ke is wired.
+/// Server responsibility:
+///   1. Verify the AIK signature on the bundle and on each device entry.
+///   2. Verify the bundle's `recipient_id` matches the authenticated user's Cognito sub.
+///   3. Conditional-write into DynamoDB so `bundle_version` is monotonically increasing
+///      (the put() helper enforces this via a ConditionExpression).
+///   4. Persist the encrypted private key blob (OPAQUE-wrapped) alongside the public bundle.
+///
+/// The Aegis service does NOT sign — the trust root is the recipient's AIK, not Aegis.
 pub async fn register_key_bundle(
     State(state): State<AppState>,
     Extension(user): Extension<AuthenticatedUser>,
     Json(req): Json<RegisterKeyBundleRequest>,
 ) -> ApiResult<(StatusCode, Json<KeyBundleResponse>)> {
-    let kem_pk_bytes = URL_SAFE_NO_PAD.decode(&req.kem_pk_b64)
-        .map_err(|_| ApiError::BadRequest("invalid kem_pk base64".to_owned()))?;
-    let ec_pk_bytes = URL_SAFE_NO_PAD.decode(&req.ec_pk_b64)
-        .map_err(|_| ApiError::BadRequest("invalid ec_pk base64".to_owned()))?;
-
-    if kem_pk_bytes.len() != 1184 {
-        return Err(ApiError::BadRequest(format!("kem_pk must be 1184 bytes, got {}", kem_pk_bytes.len())));
-    }
-    if ec_pk_bytes.len() != 33 {
-        return Err(ApiError::BadRequest(format!("ec_pk must be 33 bytes (SEC1 compressed), got {}", ec_pk_bytes.len())));
-    }
-    if let Some(ref ecdsa_b64) = req.ecdsa_pk_b64 {
-        let ecdsa_bytes = URL_SAFE_NO_PAD.decode(ecdsa_b64)
-            .map_err(|_| ApiError::BadRequest("invalid ecdsa_pk base64".to_owned()))?;
-        if ecdsa_bytes.len() != 65 {
-            return Err(ApiError::BadRequest(format!("ecdsa_pk must be 65 bytes (SEC1 uncompressed), got {}", ecdsa_bytes.len())));
-        }
+    if req.signed_bundle.bundle.recipient_id != user.recipient_id {
+        return Err(ApiError::BadRequest(
+            "signed_bundle.recipient_id does not match authenticated user".to_owned(),
+        ));
     }
 
-    // TODO: verify OPAQUE registration state before accepting key bundle.
-    // For now, accept the bundle and sign it.
+    req.signed_bundle
+        .verify()
+        .map_err(|e| ApiError::BadRequest(format!("bundle verification failed: {}", e)))?;
 
-    let store = KeyDirectoryStore::new(state.ddb(), &state.cfg().dynamodb_table_prefix);
-    let existing = store.get(user.recipient_id).await.map_err(ApiError::Internal)?;
-    let version = existing.map(|r| r.key_version.saturating_add(1)).unwrap_or(1);
+    let aik_fingerprint_hex = aik_fingerprint(&req.signed_bundle.bundle.account_identity_pubkey);
 
-    let expires_at = chrono::Utc::now() + chrono::Duration::days(365);
+    let signed_bundle_json = serde_json::to_string(&req.signed_bundle)
+        .map_err(|e| ApiError::Internal(anyhow::anyhow!("serialize signed bundle: {}", e)))?;
 
-    // TODO: load Aegis CA signing key from Secrets Manager and sign the bundle.
-    // For now, signature is a placeholder (zero bytes).
-    let signature_b64 = URL_SAFE_NO_PAD.encode([0u8; 64]);
-    let signer_key_id = "aegis-ca-v1-placeholder".to_owned();
-
+    let now = chrono::Utc::now();
     let record = KeyDirectoryRecord {
         recipient_id: user.recipient_id,
-        kem_pk_b64: req.kem_pk_b64.clone(),
-        ec_pk_b64: req.ec_pk_b64.clone(),
-        ecdsa_pk_b64: req.ecdsa_pk_b64.clone(),
-        key_version: version,
-        expires_at,
-        signature_b64: signature_b64.clone(),
-        signer_key_id: signer_key_id.clone(),
+        bundle_version: req.signed_bundle.bundle.bundle_version,
+        bundle_expiry: req.signed_bundle.bundle.bundle_expiry,
+        aik_fingerprint_hex: aik_fingerprint_hex.clone(),
+        signed_bundle_json,
         enc_sk_b64: req.enc_sk_b64,
         enc_sk_recovery_b64: req.enc_sk_recovery_b64,
-        created_at: chrono::Utc::now(),
+        created_at: now,
     };
 
-    store.put(&record).await.map_err(ApiError::Internal)?;
+    let store = KeyDirectoryStore::new(state.ddb(), &state.cfg().dynamodb_table_prefix);
+    store
+        .put(&record)
+        .await
+        .map_err(|e| ApiError::Conflict(format!("rollback or write failure: {}", e)))?;
 
     Ok((
         StatusCode::CREATED,
         Json(KeyBundleResponse {
             recipient_id: user.recipient_id,
-            kem_pk_b64: req.kem_pk_b64,
-            ec_pk_b64: req.ec_pk_b64,
-            ecdsa_pk_b64: req.ecdsa_pk_b64,
-            version,
-            expires_at,
-            signature_b64,
-            signer_key_id,
+            aik_fingerprint_hex,
+            bundle_version: req.signed_bundle.bundle.bundle_version,
+            bundle_expiry: req.signed_bundle.bundle.bundle_expiry,
+            signed_bundle: req.signed_bundle,
         }),
     ))
+}
+
+/// AIK fingerprint stored server-side: lowercase hex of full SHA-256 of the AIK
+/// uncompressed pubkey (256 bits / 64 hex chars). Used for AIK-continuity enforcement
+/// on bundle rotation in `KeyDirectoryStore::put`.
+///
+/// Clients receive this hex value via `KeyBundleResponse.aik_fingerprint_hex` and
+/// derive the human-verification display form (26 Crockford Base32 chars, ≥128-bit
+/// second-preimage / ~64-bit collision resistance per architecture §"Fingerprint
+/// Verification"). The truncation happens client-side because the full hex is needed
+/// for AIK-continuity comparison server-side.
+fn aik_fingerprint(aik_pubkey: &[u8]) -> String {
+    let mut ctx = DigestContext::new(&SHA256);
+    ctx.update(aik_pubkey);
+    let digest = ctx.finish();
+    // Explicit lowercase normalization — DynamoDB compares strings case-sensitively,
+    // so storage and comparison must always use the same case (M-9).
+    digest.as_ref().iter().map(|b| format!("{:02x}", b)).collect::<String>().to_ascii_lowercase()
 }

@@ -1,10 +1,15 @@
-// OPAQUE key registration/login flows per ADR 0002 §D5.
+// OPAQUE key registration/login flows per ADR 0003 §D5.
 //
-// The server stores: OPAQUE server state (password verifier), enc_sk (AES-256-GCM blob).
+// The server stores: OPAQUE server state (password verifier), enc_sk (AES-256-KWP blob).
 // The server NEVER sees: the password, the export_key, k_wrap, or sk_id in plaintext.
 //
-// This module defines the server-side OPAQUE protocol messages and
-// the enc_sk blob format. Client-side OPAQUE is handled by the frontend SDK.
+// Wire format per ADR 0003 §D5:
+//   k_wrap  = OPAQUE export_key (48 bytes from RFC 9807 §4.1.2), client takes [..32]
+//   enc_sk  = AES-256-KWP(k_wrap[..32], private_key_bytes)   // deterministic, no nonce
+//
+// AES-256-KWP is preferred over AES-256-GCM for this blob because (a) it is deterministic
+// (no nonce reuse risk if k_wrap is ever reused across versions); (b) it is FIPS 140-3
+// approved per SP 800-38F §6.3; and (c) it removes the GCM nonce field from the wire format.
 //
 // Full OPAQUE-ke Rust crate integration is stubbed here with clear TODOs
 // until the opaque-ke crate API is pinned for RFC 9807.
@@ -27,9 +32,9 @@ pub struct OpaqueRegistrationState {
 /// Decryptable only by the client with the OPAQUE-derived export_key.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EncryptedKeyBlob {
-    /// AES-256-GCM ciphertext of (sk_id || pk_id), key = HKDF(export_key, "aegis-v1-sk-wrap").
+    /// AES-256-KWP wrapping of (sk_id || pk_id), KEK = OPAQUE export_key[..32] (ADR 0003 §D5).
     pub enc_sk: Vec<u8>,
-    /// AES-256-GCM ciphertext of (sk_id || pk_id), key = HKDF(recovery_code, "aegis-v1-recovery-wrap").
+    /// AES-256-KWP wrapping of (sk_id || pk_id), KEK = HKDF(recovery_code, "aegis-v1-recovery-wrap")[..32].
     /// Null until user completes recovery code ceremony.
     pub enc_sk_recovery: Option<Vec<u8>>,
     pub key_version: u8,

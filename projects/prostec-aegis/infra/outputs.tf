@@ -21,11 +21,14 @@ output "ecs_service_name" {
 output "dynamodb_tables" {
   description = "DynamoDB table names"
   value = {
-    key_directory = aws_dynamodb_table.key_directory.name
-    api_keys      = aws_dynamodb_table.api_keys.name
-    revocations   = aws_dynamodb_table.revocations.name
-    audit_logs    = aws_dynamodb_table.audit_logs.name
-    oauth_tokens  = aws_dynamodb_table.oauth_tokens.name
+    key_directory      = aws_dynamodb_table.key_directory.name
+    api_keys           = aws_dynamodb_table.api_keys.name
+    revocations        = aws_dynamodb_table.revocations.name
+    audit_logs         = aws_dynamodb_table.audit_logs.name
+    oauth_cloud_tokens = aws_dynamodb_table.oauth_cloud_tokens.name
+    sessions           = aws_dynamodb_table.sessions.name
+    deliveries         = aws_dynamodb_table.deliveries.name
+    recipient_settings = aws_dynamodb_table.recipient_settings.name
   }
 }
 

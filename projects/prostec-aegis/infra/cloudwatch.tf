@@ -14,7 +14,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   statistic           = "Sum"
   threshold           = 10
   alarm_description   = "ALB 5xx responses > 10 in 1 minute"
-  treat_missing_data  = "breaching"
+  treat_missing_data  = "notBreaching"
   alarm_actions       = var.alarm_sns_arn != "" ? [var.alarm_sns_arn] : []
   ok_actions          = var.alarm_sns_arn != "" ? [var.alarm_sns_arn] : []
 

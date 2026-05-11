@@ -87,7 +87,6 @@ resource "aws_vpc_endpoint" "dynamodb" {
 
   route_table_ids = [
     aws_route_table.private.id,
-    aws_route_table.public.id,
   ]
 
   tags = { Name = "${local.name_prefix}-dynamodb-endpoint" }

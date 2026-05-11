@@ -21,24 +21,42 @@ resource "aws_ecs_task_definition" "api" {
   family                   = "${local.name_prefix}-api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 256
-  memory                   = 512
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn            = aws_iam_role.ecs_task.arn
 
   # PLACEHOLDER: replace with Aegis API image when built.
-  # TODO on real image: readonlyRootFilesystem=true, user="1000:1000",
-  #   linuxParameters.capabilities.drop=["ALL"], privileged=false,
-  #   proper healthCheck (CMD /health), pin image to digest.
   container_definitions = jsonencode([{
     name      = "api"
     image     = "public.ecr.aws/nginx/nginx:latest"
     essential = true
 
+    # Fix H4: container port corrected from 80 to 8080
     portMappings = [{
-      containerPort = 80
+      containerPort = 8080
+      hostPort      = 8080
       protocol      = "tcp"
     }]
+
+    # Fix H15: drop all Linux capabilities, run as non-root, read-only root filesystem
+    readonlyRootFilesystem = true
+    user                   = "1000:1000"
+
+    linuxParameters = {
+      capabilities = {
+        drop = ["ALL"]
+      }
+    }
+
+    # Fix M10: container health check — curl the /health endpoint
+    healthCheck = {
+      command     = ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval    = 30
+      timeout     = 5
+      retries     = 3
+      startPeriod = 60
+    }
 
     logConfiguration = {
       logDriver = "awslogs"
@@ -64,12 +82,14 @@ resource "aws_ecs_task_definition" "api" {
 }
 
 resource "aws_ecs_service" "api" {
-  name                              = "${local.name_prefix}-api"
-  cluster                           = aws_ecs_cluster.main.id
+  name    = "${local.name_prefix}-api"
+  cluster = aws_ecs_cluster.main.id
+
   task_definition                   = aws_ecs_task_definition.api.arn
   desired_count                     = 2
   launch_type                       = "FARGATE"
-  platform_version                  = "LATEST"
+  # Fix M9: pin to a specific Fargate platform version instead of LATEST
+  platform_version                  = "1.4.0"
   health_check_grace_period_seconds = 30
 
   deployment_circuit_breaker {
@@ -86,7 +106,8 @@ resource "aws_ecs_service" "api" {
   load_balancer {
     target_group_arn = aws_lb_target_group.api.arn
     container_name   = "api"
-    container_port   = 80
+    # Fix H4: align with corrected container port
+    container_port   = 8080
   }
 
   depends_on = [aws_lb_listener.https]

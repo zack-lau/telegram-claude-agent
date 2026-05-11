@@ -174,18 +174,22 @@ def extract_review_from_reasoning(reasoning: str) -> str | None:
     return None
 
 
-def call_vllm(client, messages, attempt: int = 1) -> tuple[str, str]:
+def call_vllm(client, messages, attempt: int = 1, no_think: bool = False) -> tuple[str, str]:
     """Call vLLM and return (content, reasoning). Retries once on empty content."""
     print(f"Waiting for vLLM response (attempt {attempt})...", file=sys.stderr, flush=True)
 
+    kwargs: dict = dict(
+        model=MODEL,
+        messages=messages,
+        max_tokens=MAX_TOKENS,
+        temperature=0.2,
+        timeout=TIMEOUT,
+    )
+    if no_think:
+        kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
+
     try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            max_tokens=MAX_TOKENS,
-            temperature=0.2,
-            timeout=TIMEOUT,
-        )
+        response = client.chat.completions.create(**kwargs)
     except Exception as e:
         print(f"Error calling vLLM: {e}", file=sys.stderr)
         sys.exit(1)
@@ -212,7 +216,7 @@ def call_vllm(client, messages, attempt: int = 1) -> tuple[str, str]:
             "role": retry_messages[-1]["role"],
             "content": retry_messages[-1]["content"] + RETRY_SUFFIX,
         }
-        return call_vllm(client, retry_messages, attempt=2)
+        return call_vllm(client, retry_messages, attempt=2, no_think=no_think)
 
     return content, reasoning
 
@@ -224,6 +228,7 @@ def main():
     parser.add_argument("--diff", action="store_true", help="Treat stdin as a git diff (use with --stdin)")
     parser.add_argument("--name", help="Filename label when reading from stdin")
     parser.add_argument("--reasoning", action="store_true", help="Print thinking trace to stderr")
+    parser.add_argument("--no-think", dest="no_think", action="store_true", help="Disable extended thinking (faster, avoids token-budget loops)")
     args = parser.parse_args()
 
     if args.stdin and args.file:
@@ -240,7 +245,7 @@ def main():
         {"role": "user", "content": context},
     ]
 
-    content, reasoning = call_vllm(client, messages)
+    content, reasoning = call_vllm(client, messages, no_think=args.no_think)
 
     if args.reasoning and reasoning:
         print("=== THINKING ===", file=sys.stderr)

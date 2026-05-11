@@ -24,7 +24,7 @@ resource "aws_kms_key" "oauth_tokens" {
         Sid       = "EcsTaskEncryptDecrypt"
         Effect    = "Allow"
         Principal = { AWS = aws_iam_role.ecs_task.arn }
-        Action    = ["kms:GenerateDataKey", "kms:Decrypt"]
+        Action    = ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt"]
         Resource  = "*"
       }
     ]

@@ -1,11 +1,11 @@
 use anyhow::Result;
 use aws_config::SdkConfig;
 use aws_sdk_dynamodb::Client as DdbClient;
-use aws_sdk_s3::Client as S3Client;
 use aws_sdk_secretsmanager::Client as SmClient;
 use aws_sdk_cognitoidentityprovider::Client as CognitoClient;
 use aws_sdk_kms::Client as KmsClient;
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::config::Config;
 use crate::crypto::jwt::JwtValidator;
@@ -16,7 +16,6 @@ pub struct AppState(Arc<Inner>);
 struct Inner {
     pub cfg: Config,
     pub ddb: DdbClient,
-    pub s3: S3Client,
     pub sm: SmClient,
     pub cognito: CognitoClient,
     pub kms: KmsClient,
@@ -26,16 +25,37 @@ struct Inner {
 
 impl AppState {
     pub async fn new(cfg: Config, aws_cfg: &SdkConfig) -> Result<Self> {
-        // Takes ownership of cfg; call site passes cfg by value.
-        let jwt = JwtValidator::new(&cfg.cognito_jwks_uri, &cfg.cognito_user_pool_id).await?;
+        // Fix H11 — all reqwest clients must carry explicit timeouts.
+        let http = reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .connect_timeout(Duration::from_secs(5))
+            .build()
+            .map_err(|e| anyhow::anyhow!("build http client: {}", e))?;
+
+        // Per ADR 0004 the JWT validator accepts an allowlist of all configured Cognito
+        // app client IDs (legacy single-client + per-platform mobile/web/agent). The
+        // legacy id is kept first for back-compat; per-platform empties are filtered
+        // out by the validator constructor. Same allowlist is used downstream by
+        // `classify_client` to derive ClientType from the signed `client_id` claim.
+        let client_ids = [
+            cfg.cognito_client_id.as_str(),
+            cfg.cognito_client_id_mobile.as_str(),
+            cfg.cognito_client_id_web.as_str(),
+            cfg.cognito_client_id_agent.as_str(),
+        ];
+        let jwt = JwtValidator::new(
+            &cfg.cognito_jwks_uri,
+            &cfg.cognito_user_pool_id,
+            &client_ids,
+        )
+        .await?;
         Ok(Self(Arc::new(Inner {
             ddb: DdbClient::new(aws_cfg),
-            s3: S3Client::new(aws_cfg),
             sm: SmClient::new(aws_cfg),
             cognito: CognitoClient::new(aws_cfg),
             kms: KmsClient::new(aws_cfg),
             jwt,
-            http: reqwest::Client::new(),
+            http,
             cfg,
         })))
     }
@@ -46,10 +66,6 @@ impl AppState {
 
     pub fn ddb(&self) -> &DdbClient {
         &self.0.ddb
-    }
-
-    pub fn s3(&self) -> &S3Client {
-        &self.0.s3
     }
 
     pub fn sm(&self) -> &SmClient {

@@ -8,7 +8,7 @@ resource "aws_security_group" "alb" {
 
 resource "aws_security_group" "ecs" {
   name        = "${local.name_prefix}-ecs-sg"
-  description = "ECS tasks: accept port 80 from ALB only"
+  description = "ECS tasks: accept port 8080 from ALB only"
   vpc_id      = aws_vpc.main.id
 
   tags = { Name = "${local.name_prefix}-ecs-sg" }
@@ -37,21 +37,21 @@ resource "aws_security_group_rule" "alb_ingress_https" {
 resource "aws_security_group_rule" "alb_egress_to_ecs" {
   security_group_id        = aws_security_group.alb.id
   type                     = "egress"
-  from_port                = 80
-  to_port                  = 80
+  from_port                = 8080
+  to_port                  = 8080
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.ecs.id
-  description              = "Forward to ECS tasks on port 80"
+  description              = "Forward to ECS tasks on port 8080"
 }
 
 resource "aws_security_group_rule" "ecs_ingress_from_alb" {
   security_group_id        = aws_security_group.ecs.id
   type                     = "ingress"
-  from_port                = 80
-  to_port                  = 80
+  from_port                = 8080
+  to_port                  = 8080
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.alb.id
-  description              = "HTTP from ALB"
+  description              = "HTTP from ALB on port 8080"
 }
 
 resource "aws_security_group_rule" "ecs_egress_all" {

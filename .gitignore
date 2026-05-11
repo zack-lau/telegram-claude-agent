@@ -26,5 +26,9 @@ workspace/mcp-*/
 docs/
 scripts/*.sh
 
+# Playwright browser snapshots (may capture PII like phone numbers)
+workspace/.playwright-mcp/page-*.yml
+workspace/.playwright-mcp/page-*.yaml
+
 # macOS
 .DS_Store
