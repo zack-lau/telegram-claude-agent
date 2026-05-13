@@ -1,0 +1,10 @@
+# Patent workspace
+.env
+skills/cc-skill-patent-disclosure/node_modules/
+skills/Claude-Patent-Creator/.venv/
+skills/Claude-Patent-Creator/pdfs/
+skills/Claude-Patent-Creator/index/
+skills/Claude-Patent-Creator/__pycache__/
+skills/**/__pycache__/
+*.pyc
+templates/.gitkeep
