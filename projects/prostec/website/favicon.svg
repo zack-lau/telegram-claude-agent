@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#15140F"/>
+  <text
+    x="5" y="25"
+    font-family="'Instrument Sans', system-ui, sans-serif"
+    font-weight="500"
+    font-size="21"
+    fill="#F2EDE4"
+    letter-spacing="-0.04em"
+  >p</text>
+</svg>

@@ -7,8 +7,9 @@ node_modules/
 # Runtime data
 data/
 
-# Personal projects
-projects/
+# Personal projects (prostec is tracked — hosted on Cloudflare)
+projects/*
+!projects/prostec
 
 # Workspace — personal config (see workspace/.mcp.json.example and workspace/CLAUDE.md.example)
 workspace/.mcp.json
@@ -32,3 +33,6 @@ workspace/.playwright-mcp/page-*.yaml
 
 # macOS
 .DS_Store
+
+# Service account keys and secrets
+secrets/
