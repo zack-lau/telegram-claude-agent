@@ -1,0 +1,37 @@
+[Unit]
+Description=agents-nemotron — NVIDIA Nemotron-3-Super-120B-A12B NVFP4 via vLLM NGC (port 8000)
+After=network.target docker.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/docker rm -f agents-nemotron
+ExecStart=/usr/bin/docker run --rm \
+  --name agents-nemotron \
+  --gpus all \
+  --ipc=host \
+  --ulimit memlock=-1 \
+  --ulimit stack=67108864 \
+  -p 8000:8000 \
+  -e HF_HOME=/root/.cache/huggingface \
+  -e TRANSFORMERS_CACHE=/root/.cache/huggingface \
+  -e HF_TOKEN=${HF_TOKEN} \
+  -v /home/agents/.cache/huggingface:/root/.cache/huggingface \
+  -v /home/agents/.cache/vllm/nemotron-super:/root/.cache/vllm \
+  nvcr.io/nvidia/vllm:26.05-py3 \
+  vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
+    --served-model-name nemotron-super \
+    --port 8000 \
+    --trust-remote-code \
+    --gpu-memory-utilization 0.70 \
+    --max-model-len 262144 \
+    --max-num-seqs 32 \
+    --enable-auto-tool-choice \
+    --tool-call-parser qwen3_coder \
+    --reasoning-parser nemotron_v3
+ExecStop=/usr/bin/docker stop agents-nemotron
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=default.target

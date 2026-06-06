@@ -1,0 +1,28 @@
+[Unit]
+Description=agents-rerank — BAAI/bge-reranker-v2-m3 via vLLM NGC (port 8002)
+After=network.target docker.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/docker rm -f agents-rerank
+ExecStart=/usr/bin/docker run --rm \
+  --name agents-rerank \
+  --gpus all \
+  -p 8002:8002 \
+  -e HF_HOME=/root/.cache/huggingface \
+  -e TRANSFORMERS_CACHE=/root/.cache/huggingface \
+  -v /home/agents/.cache/huggingface:/root/.cache/huggingface \
+  -v /home/agents/.cache/vllm/rerank-bge-reranker-v2-m3:/root/.cache/vllm \
+  nvcr.io/nvidia/vllm:26.05-py3 \
+  vllm serve --model BAAI/bge-reranker-v2-m3 \
+    --served-model-name bge-reranker-v2-m3 \
+    --port 8002 \
+    --trust-remote-code \
+    --gpu-memory-utilization 0.1 \
+    --max-model-len 8192
+ExecStop=/usr/bin/docker stop agents-rerank
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target
