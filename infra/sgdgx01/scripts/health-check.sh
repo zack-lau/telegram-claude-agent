@@ -9,7 +9,7 @@ sse_first_line() { curl -sf --max-time 5 "$1" 2>/dev/null | head -1 || true; }
 
 source /home/agents/.secrets/telegram_notify.sh 2>/dev/null || true
 
-MCP_TOKEN="65ae9bd06d058c14264a02fc68ee687f735a30f1d16b45ae82167eccb98d72a5"
+MCP_TOKEN="${MCP_TOKEN:-}"
 OVERALL=0
 RESULTS=()
 
