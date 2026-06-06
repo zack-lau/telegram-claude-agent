@@ -26,7 +26,7 @@ signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # clean exit on broken SSH pipe
 try:
     import openai
 except ImportError:
-    print("Error: openai SDK not found. Run: /home/agents/perplexity-mcp/.venv/bin/pip install openai", file=sys.stderr)
+    print("Error: openai SDK not found. Run: pip install openai", file=sys.stderr)
     sys.exit(1)
 
 BASE_URL = os.environ.get("OPENAI_BASE_URL", "http://localhost:8000/v1")
