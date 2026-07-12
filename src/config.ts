@@ -11,8 +11,13 @@ const envSchema = z.object({
       message: "ALLOWED_USERS must be a comma-separated list of positive Telegram user IDs",
     }),
 
-  // ── Optional: Memory — LanceDB via MCP stdio subprocess ──
-  // When set, the agent gets persistent long-term memory (store/recall/forget).
+  // ── Optional: Memory — LanceDB via MCP (SSE URL or stdio subprocess) ──
+  // SPARK_MEMORY_MCP_URL: SSE endpoint (preferred, e.g. http://host:5282/sse)
+  // MEMORY_MCP_COMMAND + MEMORY_MCP_SCRIPT: stdio subprocess fallback
+  SPARK_MEMORY_MCP_URL: z.string().url().refine(
+    (u) => u.startsWith("http://") || u.startsWith("https://"),
+    { message: "SPARK_MEMORY_MCP_URL must use http or https" },
+  ).optional(),
   MEMORY_MCP_COMMAND: z
     .string()
     .regex(/^[^\s;&|$`(){}\\]+$/, "MEMORY_MCP_COMMAND must be a plain executable path with no shell metacharacters")
@@ -29,6 +34,9 @@ const envSchema = z.object({
   // ── Optional: Voice transcription — Whisper (OpenAI-compatible endpoint) ──
   // When set, voice messages are transcribed and sent to the agent as text.
   SPARK_WHISPER_URL: z.string().url().optional(),
+
+  // ── Optional: Perplexity MCP — web search via @perplexity-ai/mcp-server ──
+  PERPLEXITY_API_KEY: z.string().optional(),
 
   // ── Optional: additional services used by workspace MCP config ──
   // These are not used directly by the bot process; configure in .mcp.json.
@@ -71,6 +79,47 @@ export type Config = z.infer<typeof envSchema>;
 
 let _config: Config | null = null;
 
+const TELEGRAM_TOKEN_PATTERN = /[0-9]{5,20}:[A-Za-z0-9_-]{20,100}/g;
+
+export function sanitizeLogText(value: unknown): string {
+  return String(value).replace(TELEGRAM_TOKEN_PATTERN, "[REDACTED_TELEGRAM_TOKEN]");
+}
+
+export function formatFatalError(error: unknown): string {
+  const message = error instanceof Error
+    ? `${error.name}: ${error.message}`
+    : "unknown error";
+  return sanitizeLogText(message);
+}
+
+export function summarizeLogData(data: unknown): unknown {
+  if (data === null || data === undefined) return data;
+  if (typeof data === "string") return sanitizeLogText(data);
+  if (typeof data === "number" || typeof data === "boolean") return data;
+
+  if (data instanceof Error) {
+    return {
+      name: sanitizeLogText(data.name),
+      message: sanitizeLogText(data.message),
+    };
+  }
+
+  if (typeof data === "object") {
+    const value = data as Record<string, unknown>;
+    const summary: Record<string, string | number | boolean> = {};
+    for (const key of ["name", "message", "code", "status", "statusCode"]) {
+      const item = value[key];
+      if (typeof item === "string") summary[key] = sanitizeLogText(item);
+      if (typeof item === "number" || typeof item === "boolean") summary[key] = item;
+    }
+    return Object.keys(summary).length > 0
+      ? summary
+      : { type: "object" };
+  }
+
+  return sanitizeLogText(data);
+}
+
 export function getConfig(): Config {
   if (!_config) {
     _config = envSchema.parse(process.env);
@@ -83,15 +132,23 @@ export function log(
   msg: string,
   data?: unknown,
 ) {
+  writeLog(level, msg, data, getConfig().LOG_LEVEL);
+}
+
+export function writeLog(
+  level: "debug" | "info" | "warn" | "error",
+  msg: string,
+  data: unknown,
+  minimumLevel: "debug" | "info" | "warn" | "error",
+) {
   const levels = { debug: 0, info: 1, warn: 2, error: 3 };
-  const cfg = getConfig();
-  if (levels[level] >= levels[cfg.LOG_LEVEL]) {
+  if (levels[level] >= levels[minimumLevel]) {
     const ts = new Date().toISOString();
     const prefix = `[${ts}] [${level.toUpperCase()}]`;
     if (data) {
-      console[level](`${prefix} ${msg}`, data);
+      console[level](`${prefix} ${sanitizeLogText(msg)}`, summarizeLogData(data));
     } else {
-      console[level](`${prefix} ${msg}`);
+      console[level](`${prefix} ${sanitizeLogText(msg)}`);
     }
   }
 }

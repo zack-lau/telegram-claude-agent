@@ -60,6 +60,9 @@ const plist = `<?xml version="1.0" encoding="UTF-8"?>
   <key>ThrottleInterval</key>
   <integer>20</integer>
 
+  <key>Umask</key>
+  <integer>63</integer>
+
   <key>StandardOutPath</key>
   <string>${logDir}/${LABEL}.log</string>
 
@@ -70,6 +73,12 @@ const plist = `<?xml version="1.0" encoding="UTF-8"?>
   <dict>
     <key>PATH</key>
     <string>/usr/local/bin:/usr/bin:/bin:${home}/.bun/bin</string>
+    <key>DEBUG</key>
+    <string>0</string>
+    <key>NODE_DEBUG</key>
+    <string>0</string>
+    <key>BUN_DEBUG</key>
+    <string>0</string>
   </dict>
 
   <!-- launchd starts processes with a minimal environment, but Bun

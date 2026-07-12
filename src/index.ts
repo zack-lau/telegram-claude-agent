@@ -1,5 +1,5 @@
 import { mkdirSync, existsSync } from "fs";
-import { getConfig, log } from "./config.js";
+import { formatFatalError, getConfig, log } from "./config.js";
 import { createBot } from "./bot/bot.js";
 import { loadSessions } from "./agent/sessions.js";
 import { startContextServer } from "./context-server.js";
@@ -55,6 +55,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Fatal error:", err);
+  console.error(`Fatal error: ${formatFatalError(err)}`);
   process.exit(1);
 });

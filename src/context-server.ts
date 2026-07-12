@@ -1,6 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { randomUUID, timingSafeEqual } from "crypto";
 import { type Config, log } from "./config.js";
+import { CONTEXT_SERVER_HOST, isPublicHealthRequest } from "./health.js";
 import { createProjectMcpServer } from "./memory/project-tools.js";
 
 const notifyProjectServer = createProjectMcpServer();
@@ -104,15 +105,15 @@ async function askMira(message: string, cfg: Config, signal: AbortSignal): Promi
       "decisions, and stored context using memory and document search. " +
       "Be factual and concise. Do not execute tasks or take any actions.",
     mcpServers: {
-      ...(cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT
-        ? { memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] } }
+      ...(cfg.SPARK_MEMORY_MCP_URL ? { memory: { type: "sse", url: cfg.SPARK_MEMORY_MCP_URL } }
+        : cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT ? { memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] } }
         : {}),
       ...(cfg.SPARK_QMD_MCP_URL
         ? { qmd: { type: "sse", url: cfg.SPARK_QMD_MCP_URL } }
         : {}),
     },
     allowedTools: [
-      ...(cfg.MEMORY_MCP_COMMAND ? ["mcp__memory__memory_recall"] : []),
+      ...((cfg.SPARK_MEMORY_MCP_URL || cfg.MEMORY_MCP_COMMAND) ? ["mcp__memory__memory_recall"] : []),
       ...(cfg.SPARK_QMD_MCP_URL
         ? ["mcp__qmd__query", "mcp__qmd__get", "mcp__qmd__multi_get"]
         : []),
@@ -213,8 +214,8 @@ async function processNotification(notification: Notification, cfg: Config): Pro
       "Follow the processing instructions carefully.",
     settingSources: ["user", "project"],
     mcpServers: {
-      ...(cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT
-        ? { memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] } }
+      ...(cfg.SPARK_MEMORY_MCP_URL ? { memory: { type: "sse", url: cfg.SPARK_MEMORY_MCP_URL } }
+        : cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT ? { memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] } }
         : {}),
       ...(cfg.SPARK_QMD_MCP_URL
         ? { qmd: { type: "sse", url: cfg.SPARK_QMD_MCP_URL } }
@@ -222,7 +223,7 @@ async function processNotification(notification: Notification, cfg: Config): Pro
       projects: notifyProjectServer,
     },
     allowedTools: [
-      ...(cfg.MEMORY_MCP_COMMAND ? ["mcp__memory__*"] : []),
+      ...((cfg.SPARK_MEMORY_MCP_URL || cfg.MEMORY_MCP_COMMAND) ? ["mcp__memory__*"] : []),
       ...(cfg.SPARK_QMD_MCP_URL ? ["mcp__qmd__*"] : []),
       "mcp__projects__project_list",
       "mcp__projects__project_work",
@@ -263,9 +264,21 @@ export async function startContextServer(cfg: Config): Promise<ReturnType<typeof
   }
 
   const server = Bun.serve({
+    hostname: CONTEXT_SERVER_HOST,
     port: cfg.CONTEXT_SERVER_PORT,
     maxRequestBodySize: MAX_BODY_BYTES,
     fetch: async (req) => {
+      const { pathname } = new URL(req.url);
+      if (isPublicHealthRequest(req.method, req.url)) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: {
+            "cache-control": "no-store",
+            "content-type": "application/json",
+          },
+        });
+      }
+
       const requestId = randomUUID().slice(0, 8);
       const start = Date.now();
 
@@ -283,7 +296,6 @@ export async function startContextServer(cfg: Config): Promise<ReturnType<typeof
       }
 
       // Route
-      const { pathname } = new URL(req.url);
       if (req.method !== "POST" || (pathname !== "/ask" && pathname !== "/notify")) {
         return new Response(JSON.stringify({ error: "not found" }), {
           status: 404,

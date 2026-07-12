@@ -95,20 +95,28 @@ export async function sendMessageStreaming(
     settingSources: ["project"],
     ...(bot ? { hooks: buildHooksForChat(bot, chatId) } : {}),
     mcpServers: {
-      // MEMORY_MCP_COMMAND/SCRIPT come from env vars validated by config.ts.
-      // The SDK invokes them via spawn (not shell), so metacharacter injection
-      // is not possible as long as the SDK does not use shell:true.
-      ...(cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT ? {
+      // Memory MCP: prefer SSE URL (remote server), fall back to stdio subprocess.
+      ...(cfg.SPARK_MEMORY_MCP_URL ? {
+        memory: { type: "sse", url: cfg.SPARK_MEMORY_MCP_URL },
+      } : cfg.MEMORY_MCP_COMMAND && cfg.MEMORY_MCP_SCRIPT ? {
         memory: { command: cfg.MEMORY_MCP_COMMAND, args: [cfg.MEMORY_MCP_SCRIPT] },
       } : {}),
       ...(cfg.SPARK_QMD_MCP_URL ? {
         qmd: { type: "sse", url: cfg.SPARK_QMD_MCP_URL },
       } : {}),
+      ...(cfg.PERPLEXITY_API_KEY ? {
+        perplexity: {
+          command: "npx",
+          args: ["-y", "@perplexity-ai/mcp-server"],
+          env: { PERPLEXITY_API_KEY: cfg.PERPLEXITY_API_KEY },
+        },
+      } : {}),
       projects: projectServer,
     },
     allowedTools: [
-      ...(cfg.MEMORY_MCP_COMMAND ? ["mcp__memory__*"] : []),
+      ...((cfg.SPARK_MEMORY_MCP_URL || cfg.MEMORY_MCP_COMMAND) ? ["mcp__memory__*"] : []),
       ...(cfg.SPARK_QMD_MCP_URL ? ["mcp__qmd__*"] : []),
+      ...(cfg.PERPLEXITY_API_KEY ? ["mcp__perplexity__*"] : []),
       "mcp__projects__project_list",
       "mcp__projects__project_work",
       "mcp__projects__project_create",

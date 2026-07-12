@@ -12,11 +12,11 @@ Run Perplexity Pro's Deep Research feature via Playwright MCP browser automation
 ## When to Use
 
 - User asks for **deep**, **thorough**, or **comprehensive** research on a topic
-- Perplexity Sonar API (`mcp__perplexity__search`) wouldn't provide enough depth
+- Perplexity Sonar API (`mcp__perplexity__perplexity_ask`) wouldn't provide enough depth
 - Need multi-source synthesis with citations (investment DD, technical reviews, competitive analysis)
 - User explicitly asks for "deep research"
 
-**Don't use when:** A quick factual lookup is sufficient — use `mcp__perplexity__search` with `detail: "detailed"` instead.
+**Don't use when:** A quick factual lookup is sufficient — use `mcp__perplexity__perplexity_ask` (or `perplexity_research` for medium depth) instead.
 
 ## Prerequisites
 
@@ -156,5 +156,5 @@ Batch related sub-questions into one query to conserve quota.
 | `/` menu doesn't appear | Take snapshot, look for alternative mode picker UI |
 | "Deep Research" not in menu | UI may have changed — look for toggles/dropdowns near input |
 | Timeout after 10 min | Retry once; some queries legitimately take long |
-| Quota exceeded | Wait until next day, or fall back to `mcp__perplexity__search` |
+| Quota exceeded | Wait until next day, or fall back to `mcp__perplexity__perplexity_ask` |
 | Report appears truncated | Scroll to bottom and re-extract |

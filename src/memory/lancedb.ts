@@ -20,6 +20,7 @@ async function fetchStats(): Promise<Record<string, number>> {
 
   const cfg = getConfig();
 
+  // Stats fetch only supports stdio subprocess; SSE URL handled by the SDK at call time.
   if (!cfg.MEMORY_MCP_COMMAND || !cfg.MEMORY_MCP_SCRIPT) {
     return {};
   }

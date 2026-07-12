@@ -47,14 +47,6 @@ qmd_resp=$(curl -sf --max-time 5 http://localhost:8181/mcp     -H 'Content-Type:
 whisper_st=$(systemctl is-active whisper-server 2>/dev/null) || whisper_st="unknown"
 [[ "$whisper_st" == "active" ]] && ok "whisper" || warn "whisper" "(${whisper_st})"
 
-# ── 7. mcp-trading (5003) ────────────────────────────────────────────────────
-mcp_trading_resp=$(sse_first_line http://localhost:5003/sse)
-[[ "$mcp_trading_resp" == *"endpoint"* ]] && ok "mcp-trading" "(SSE ready)" || critical "mcp-trading" "DOWN"
-
-# ── 8. trader-signals (pm2, port 4174) ───────────────────────────────────────
-ts_status=$(/home/agents/.npm-global/bin/pm2 jlist 2>/dev/null     | python3 -c 'import json,sys; ps=json.load(sys.stdin); p=[x for x in ps if x["name"]=="trader-signals"]; print(p[0]["pm2_env"]["status"] if p else "missing")' 2>/dev/null) || ts_status="error"
-[[ "$ts_status" == "online" ]] && ok "trader-signals" || warn "trader-signals" "(${ts_status})"
-
 # ── 11. minio (9000) ─────────────────────────────────────────────────────────
 http_ok "http://localhost:9000/minio/health/live" && ok "minio" || critical "minio" "DOWN"
 

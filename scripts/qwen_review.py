@@ -3,14 +3,10 @@
 Adversarial code review via direct vLLM API (Qwen3.6 on sgdgx01).
 Runs ON sgdgx01 — invoke via SSH from local machine.
 
-Usage (from local machine):
-  cat file.py        | ssh sgdgx01 "python3 ~/trading/scripts/qwen_review.py --stdin --name file.py"
-  git diff           | ssh sgdgx01 "python3 ~/trading/scripts/qwen_review.py --stdin --diff"
-  git diff HEAD~1    | ssh sgdgx01 "python3 ~/trading/scripts/qwen_review.py --stdin --diff"
-
-Usage (on sgdgx01 directly):
-  python3 ~/trading/scripts/qwen_review.py <path/to/file.py>
-  python3 ~/trading/scripts/qwen_review.py --reasoning <path/to/file.py>
+Usage:
+  OPENAI_BASE_URL=http://192.168.22.3:8000/v1 python3 qwen_review.py --stdin --name file.py < file.py
+  OPENAI_BASE_URL=http://192.168.22.3:8000/v1 git diff | python3 qwen_review.py --stdin --diff
+  OPENAI_BASE_URL=http://192.168.22.3:8000/v1 python3 qwen_review.py --reasoning <path/to/file.py>
 """
 
 import argparse
